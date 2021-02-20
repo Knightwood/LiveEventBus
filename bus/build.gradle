@@ -1,0 +1,79 @@
+apply plugin: 'com.android.library'
+apply plugin: 'maven-publish'
+
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
+
+    defaultConfig {
+        minSdkVersion 22
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    implementation 'org.jetbrains:annotations-java5:15.0'
+}
+
+/*afterEvaluate {
+    publishing {
+        publications {
+            // Creates a Maven publication called "release".
+            maven(MavenPublication) {
+                from components.debug
+                // You can then customize attributes of the publication as shown below.
+                groupId = 'com.github.knightwood'
+                artifactId = 'liveeventbus'
+                version = '1.0'
+
+            }
+        }
+    }
+}*/
+
+task generateSourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier 'sources'
+}
+
+def versionName = "dev-1.0"
+
+publishing {
+    publications {
+        // 定义一个名为 Production 的发布
+        Production(MavenPublication) {
+            // 使用方引用 implementation 'cn.com.jack:liveeventbus:dev-1.0'
+            groupId = "com.github.knightwood"
+            artifactId = "liveeventbus"
+            version = versionName
+            // 必须有这个 否则不会上传AAR包
+            afterEvaluate { artifact(tasks.getByName("bundleReleaseAar")) }
+            // 上传source，这样使用方可以看到方法注释
+            artifact generateSourcesJar
+        }
+    }
+
+}
