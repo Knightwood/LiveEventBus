@@ -20,9 +20,9 @@ public class LiveDataMod<T> extends MutableLiveData<T> {
 
     private static int mVersion = START_VERSION;//自定义mVersion，取代liveData中对version值的控制
     /**
-     * uuid:ObserverAgency中的uuid,也就是ostensibleObserver的uuid
+     * uuid:ObserverAgent中的uuid,也就是ostensibleObserver的uuid
      */
-    final Map<UUID, ObserverAgency<? super T>> mObservers = new HashMap();
+    final Map<UUID, ObserverAgent<? super T>> mObservers = new HashMap<>();
 
     @Override
     public void postValue(T value) {
@@ -41,7 +41,7 @@ public class LiveDataMod<T> extends MutableLiveData<T> {
     }
 
     public void removeObserver(UUID uuid) {
-        ObserverAgency<? super T> existing = this.mObservers.get(uuid);
+        ObserverAgent<? super T> existing = this.mObservers.get(uuid);
         if (existing != null) {
             this.mObservers.remove(uuid);
             removeObserver(existing.realObserver);
@@ -55,7 +55,7 @@ public class LiveDataMod<T> extends MutableLiveData<T> {
     @Override
     public void removeObserver(@NonNull Observer<? super T> observer) {
         super.removeObserver(observer);
-        ObserverAgency<? super T> existing = get(observer);
+        ObserverAgent<? super T> existing = get(observer);
         if (existing != null) {
             this.mObservers.remove(existing.ostensibleObserver.uuid);
         }
@@ -63,7 +63,7 @@ public class LiveDataMod<T> extends MutableLiveData<T> {
 
     @Override
     public void removeObservers(@NonNull LifecycleOwner owner) {
-        for (Map.Entry<UUID, ObserverAgency<? super T>> entry : this.mObservers.entrySet()) {
+        for (Map.Entry<UUID, ObserverAgent<? super T>> entry : this.mObservers.entrySet()) {
             if (entry.getValue().isAttachedTo(owner)) {
                 this.mObservers.remove(entry.getKey());
             }
@@ -76,7 +76,7 @@ public class LiveDataMod<T> extends MutableLiveData<T> {
      * @param realObserver
      */
     public void deleteObserver(@NonNull Observer<? super T> realObserver) {
-        for (Map.Entry<UUID, ObserverAgency<? super T>> entry : this.mObservers.entrySet()) {
+        for (Map.Entry<UUID, ObserverAgent<? super T>> entry : this.mObservers.entrySet()) {
             if (entry.getValue().realObserver == realObserver) {
                 this.mObservers.remove(entry.getKey());
             }
@@ -86,8 +86,8 @@ public class LiveDataMod<T> extends MutableLiveData<T> {
      *
      * @param realObserver RealObserver,也就是androidx.lifecycle.Observer;
      */
-    private ObserverAgency<? super T> get(@NonNull Observer<? super T> realObserver) {
-        for (Map.Entry<UUID, ObserverAgency<? super T>> entry : this.mObservers.entrySet()) {
+    private ObserverAgent<? super T> get(@NonNull Observer<? super T> realObserver) {
+        for (Map.Entry<UUID, ObserverAgent<? super T>> entry : this.mObservers.entrySet()) {
             if (entry.getValue().realObserver == realObserver) {
                 return entry.getValue();
             }
@@ -95,8 +95,8 @@ public class LiveDataMod<T> extends MutableLiveData<T> {
         return null;
     }
 
-    public ObserverAgency<? super T> getRenegade() {
-        for (Map.Entry<UUID, ObserverAgency<? super T>> entry : this.mObservers.entrySet()) {
+    public ObserverAgent<? super T> getRenegade() {
+        for (Map.Entry<UUID, ObserverAgent<? super T>> entry : this.mObservers.entrySet()) {
             if (entry.getValue().lastVersion != getVersion()) {
                 return entry.getValue();
             }
@@ -105,7 +105,7 @@ public class LiveDataMod<T> extends MutableLiveData<T> {
     }
 
     public boolean isHasRenegade() {
-        for (Map.Entry<UUID, ObserverAgency<? super T>> entry : this.mObservers.entrySet()) {
+        for (Map.Entry<UUID, ObserverAgent<? super T>> entry : this.mObservers.entrySet()) {
             if (entry.getValue().lastVersion != getVersion()) {
                 return true;
             }

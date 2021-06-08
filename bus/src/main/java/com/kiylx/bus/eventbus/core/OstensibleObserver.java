@@ -6,7 +6,7 @@ import java.util.UUID;
  * 创建者 kiylx
  * 创建时间 2021/1/2 13:17
  * packageName：com.kiylx.bus.eventbus.core
- * 描述：虚假的Observer,描述对于真正的observer的配置信息
+ * 描述：虚假的Observer,描述对于observer的配置信息，且有observer的功能，不是对于真正的observer的包装。
  */
 public abstract class OstensibleObserver<T> {
     public final UUID uuid = UUID.randomUUID();
@@ -33,6 +33,7 @@ public abstract class OstensibleObserver<T> {
             config = new Config();
         return config;
     }
+
     /**
      * Called when the data is changed.
      *

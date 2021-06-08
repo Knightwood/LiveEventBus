@@ -12,12 +12,8 @@ import java.util.UUID;
  * 描述：存储消息通道，分发消息通道，全局配置调整
  */
 public class BusCore {
-    //存放通道
-    private final Map<String, Channel<Object>> mChannels;
-    /**
-     * 配置项
-     */
-    private final Config config = new Config();
+    private final Map<String, Channel<Object>> mChannels;//存放通道
+    private final Config config;//配置项
     private boolean lifecycleObserverAlwaysActive;
     private boolean autoClear;
 
@@ -25,12 +21,12 @@ public class BusCore {
         this.mChannels = new HashMap<>();
         lifecycleObserverAlwaysActive = true;
         autoClear = false;
+        config = new Config();
     }
 
     public static BusCore getInstance() {
         return Singleton.INSTANCE.getInstance();
     }
-
 
     private static enum Singleton {
         INSTANCE;

@@ -7,6 +7,8 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 
+import com.kiylx.bus.eventbus.core.interfaces.Action;
+import com.kiylx.bus.eventbus.core.interfaces.Mode;
 import com.kiylx.bus.eventbus.utils.PostTask;
 import com.kiylx.bus.eventbus.utils.Utils;
 
@@ -23,6 +25,13 @@ import java.util.UUID;
  */
 
 public class Channel<T> implements Action<T> {
+    //可配置项
+    //通道是否可以发送消息
+    private boolean isCanPush = true;
+    private Mode crossProcess = Mode.normal;
+    private Config config;
+    private final Channel<T> outer = this;
+
     @NotNull
     private final String key;
     @NotNull
@@ -31,10 +40,7 @@ public class Channel<T> implements Action<T> {
     private final UUID channelUUID = UUID.randomUUID();
     //存放消息的信箱
     private final LiveDataMod<T> inBox = new LiveDataMod<>();
-    //通道是否可以发送消息
-    private boolean isCanPush = true;
-    private Config config;
-    //postmethod
+    //PostMethod
     private final PostMethod mPostMethod = new PostMethod();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -62,11 +68,11 @@ public class Channel<T> implements Action<T> {
         return config;
     }
 
+    //以下是发送
     @Override
     public void post(T value) {
         post(value, 0L, null);
     }
-
 
     @Override
     public void postDelay(T value, long delay) {
@@ -78,22 +84,85 @@ public class Channel<T> implements Action<T> {
         post(value, delay, sender);
     }
 
-    private void post(T message, long delay, LifecycleOwner sender) {
-        if (delay < 1L) {
-            if (Utils.isMainThread()) {
-                inBox.setValue(message);
-            } else {
-                mainHandler.post(new PostTask(new Object[]{message, sender}, mPostMethod));
-            }
-        } else {
-            mainHandler.postDelayed(new PostTask(new Object[]{message, sender}, mPostMethod), delay);
-        }
+    @Override
+    public void postAcrossProcess(T value) {
 
+    }
+
+    @Override
+    public void postAcrossApp(T value) {
+
+    }
+
+    //以下是监听
+    @Override
+    public void observe(@NonNull LifecycleOwner owner, @NonNull OstensibleObserver<T> ostensibleObserver) {
+        ostensibleObserver.config().setSticky(false);
+        observerInternal(owner, ostensibleObserver);
+    }
+
+    @Override
+    public void observeSticky(@NonNull LifecycleOwner owner, @NonNull OstensibleObserver<T> ostensibleObserver) {
+        ostensibleObserver.config().setSticky(true);
+        ObserverAgent existing = observerInternal(owner, ostensibleObserver);
+    }
+
+    @Override
+    public void observeForever(@NonNull OstensibleObserver<T> ostensibleObserver) {
+        ostensibleObserver.config().setSticky(false);
+        observerForeverInternal(ostensibleObserver);
+    }
+
+    @Override
+    public void observeStickyForever(@NonNull OstensibleObserver<T> ostensibleObserver) {
+        ostensibleObserver.config().setSticky(true);
+        ObserverAgent existing = observerForeverInternal(ostensibleObserver);
+    }
+
+    //以下是移除监听
+    @Override
+    public void removeObserver(@NonNull OstensibleObserver<T> ostensibleObserver) {
+        ObserverAgent<? super T> existing = inBox.mObservers.get(ostensibleObserver.uuid);
+        if (existing != null) {
+            inBox.removeObserver(existing.realObserver);
+        }
+    }
+
+    @Override
+    public void removeObservers(@NonNull LifecycleOwner owner) {
+        this.inBox.removeObservers(owner);
+    }
+
+    //下面是具体实现
+    /**
+     * 最终的实现
+     *
+     * @param message
+     * @param delay
+     * @param sender
+     */
+    private void post(T message, long delay, LifecycleOwner sender) {
+        switch (crossProcess) {
+            case binder:
+                break;
+            case broadcast:
+                break;
+            case normal:
+                if (delay < 1L) {
+                    if (Utils.isMainThread()) {
+                        inBox.setValue(message);
+                    } else {
+                        mainHandler.post(new PostTask(mPostMethod, message, sender));
+                    }
+                } else {
+                    mainHandler.postDelayed(new PostTask(mPostMethod, message, sender), delay);
+                }
+        }
     }
 
     /**
      * args[0]: 消息
-     * args[1]: LifecycleOwner
+     * args[1]: LifecycleOwner,也就是sender
      */
     private class PostMethod implements PostTask.Method {
 
@@ -116,53 +185,17 @@ public class Channel<T> implements Action<T> {
         }
     }
 
-    @Override
-    public void observe(@NonNull LifecycleOwner owner, @NonNull OstensibleObserver<T> ostensibleObserver) {
-        ostensibleObserver.config().setSticky(false);
-        observerInternal(owner, ostensibleObserver);
-    }
-
-    @Override
-    public void observeSticky(@NonNull LifecycleOwner owner, @NonNull OstensibleObserver<T> ostensibleObserver) {
-        ostensibleObserver.config().setSticky(true);
-        ObserverAgency existing = observerInternal(owner, ostensibleObserver);
-    }
-
-    @Override
-    public void observeForever(@NonNull OstensibleObserver<T> ostensibleObserver) {
-        ostensibleObserver.config().setSticky(false);
-        observerForeverInternal(ostensibleObserver);
-    }
-
-    @Override
-    public void observeStickyForever(@NonNull OstensibleObserver<T> ostensibleObserver) {
-        ostensibleObserver.config().setSticky(true);
-        ObserverAgency existing = observerForeverInternal(ostensibleObserver);
-    }
-
-    @Override
-    public void removeObserver(@NonNull OstensibleObserver<T> ostensibleObserver) {
-        ObserverAgency<? super T> existing = inBox.mObservers.get(ostensibleObserver.uuid);
-        if (existing != null) {
-            inBox.removeObserver(existing.realObserver);
-        }
-    }
-    @Override
-    public void removeObservers(@NonNull LifecycleOwner owner) {
-        this.inBox.removeObservers(owner);
-    }
-
     /**
      * @param owner
-     * @param ostensibleObserver 在observerInternal方法被调用之前，observer与observerMod之间没有产生联系，ObserverWrapperMod也不存在。
-     *                    因此，当调用observerInternal时，若从observers这个map中找得到，则说明已经new出来了observerWrapperMod，
-     *                    并与lifecycleOwner建立了关系。
+     * @param ostensibleObserver 在observerInternal方法被调用之前，observer与OstensibleObserver之间没有产生联系，ObserverAgent也不存在。
+     *                           因此，当调用observerInternal时，若从observers这个map中找得到，则说明已经new出来了ObserverAgent，
+     *                           并与lifecycleOwner建立了关系。
      */
-    private ObserverAgency observerInternal(LifecycleOwner owner, OstensibleObserver<T> ostensibleObserver) {
-        ObserverAgency<? super T> existing = putIfAbsent(ostensibleObserver);
+    private ObserverAgent observerInternal(LifecycleOwner owner, OstensibleObserver<T> ostensibleObserver) {
+        ObserverAgent<? super T> existing = putIfAbsent(ostensibleObserver);
         if (existing != null) {
             existing.setOwner(owner);
-            //刚刚new出来ObserverWrapperMod，还没有与LifecycleOwner建立联系。
+            //刚刚new出来ObserverAgent，还没有与LifecycleOwner建立联系。
             if (Utils.isMainThread())
                 inBox.observe(owner, existing.realObserver);
             else
@@ -174,11 +207,12 @@ public class Channel<T> implements Action<T> {
                 });
             return existing;
         }
+        //不重复监听
         return null;
     }
 
-    private ObserverAgency observerForeverInternal(OstensibleObserver<T> ostensibleObserver) {
-        ObserverAgency<? super T> existing = putIfAbsent(ostensibleObserver);
+    private ObserverAgent observerForeverInternal(OstensibleObserver<T> ostensibleObserver) {
+        ObserverAgent<? super T> existing = putIfAbsent(ostensibleObserver);
         if (existing != null) {
             //刚刚new出来ObserverWrapperMod，还没有与LifecycleOwner建立联系。
             if (Utils.isMainThread())
@@ -200,20 +234,29 @@ public class Channel<T> implements Action<T> {
      * @return 在map中能找到observer对应的值，返回null。
      * 在map中找不到observer对应的值，放入new出来的值，并返回new出来的值。
      */
-    private ObserverAgency<? super T> putIfAbsent(OstensibleObserver<? super T> ostensibleObserver) {
-        ObserverAgency<? super T> v = inBox.mObservers.get(ostensibleObserver.uuid);
+    private ObserverAgent<? super T> putIfAbsent(OstensibleObserver<? super T> ostensibleObserver) {
+        ObserverAgent<? super T> v = inBox.mObservers.get(ostensibleObserver.uuid);
         if (v == null) {
-            v = new ObserverAgency<>(ostensibleObserver);
+            v = new ObserverAgent<>(ostensibleObserver);
             inBox.mObservers.put(ostensibleObserver.uuid, v);
             return v.generateObserver(inBox.getVersion());
         }
         return null;
     }
 
-    protected class Config {
+    public class Config {
         public Config setCanPushMes(boolean b) {
-            isCanPush = b;
+            outer.isCanPush = b;
             return this;
+        }
+
+        public Config setIsUseCrossProcess(Mode mode) {
+            outer.crossProcess = mode;
+            return this;
+        }
+
+        public Channel<T> build() {
+            return outer;
         }
     }
 }

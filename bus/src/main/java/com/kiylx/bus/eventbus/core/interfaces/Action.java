@@ -1,7 +1,9 @@
-package com.kiylx.bus.eventbus.core;
+package com.kiylx.bus.eventbus.core.interfaces;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LifecycleOwner;
+
+import com.kiylx.bus.eventbus.core.OstensibleObserver;
 
 /**
  * 创建者 kiylx
@@ -22,14 +24,14 @@ public interface Action<T> {
      *
      * @param value 发送的消息
      */
-    //void postAcrossProcess(T value);
+    void postAcrossProcess(T value);
 
     /**
      * App之间发送消息
      *
      * @param value 发送的消息
      */
-    //void postAcrossApp(T value);
+    void postAcrossApp(T value);
 
     /**
      * 进程内发送消息，延迟发送
@@ -54,11 +56,11 @@ public interface Action<T> {
      * 需要跨进程、跨APP发送消息的时候调用该方法
      * 可使用postAcrossProcess or postAcrossApp代替
      *
-     * @param value 发送的消息
-     */
-    @Deprecated
-    //void broadcast(T value);
+     * //@param value 发送的消息
 
+    @Deprecated
+    void broadcast(T value);
+ */
     /**
      * 以广播的形式发送一个消息
      * 需要跨进程、跨APP发送消息的时候调用该方法
@@ -66,9 +68,9 @@ public interface Action<T> {
      * @param value      发送的消息
      * @param foreground true:前台广播、false:后台广播
      * @param onlyInApp  true:只在APP内有效、false:全局有效
-     */
-    //void broadcast(T value, boolean foreground, boolean onlyInApp);
 
+    void broadcast(T value, boolean foreground, boolean onlyInApp);
+*/
     /**
      * 注册一个Observer，生命周期感知，自动取消订阅
      *
