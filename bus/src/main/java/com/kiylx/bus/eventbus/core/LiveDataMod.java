@@ -97,7 +97,7 @@ public class LiveDataMod<T> extends MutableLiveData<T> {
 
     public ObserverAgent<? super T> getRenegade() {
         for (Map.Entry<UUID, ObserverAgent<? super T>> entry : this.mObservers.entrySet()) {
-            if (entry.getValue().lastVersion != getVersion()) {
+            if (entry.getValue().observerLastVersion != getVersion()) {
                 return entry.getValue();
             }
         }
@@ -106,7 +106,7 @@ public class LiveDataMod<T> extends MutableLiveData<T> {
 
     public boolean isHasRenegade() {
         for (Map.Entry<UUID, ObserverAgent<? super T>> entry : this.mObservers.entrySet()) {
-            if (entry.getValue().lastVersion != getVersion()) {
+            if (entry.getValue().observerLastVersion != getVersion()) {
                 return true;
             }
         }

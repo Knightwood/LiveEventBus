@@ -18,7 +18,7 @@ import static com.kiylx.bus.eventbus.core.LiveDataMod.START_VERSION;
  * 将真正的observer与OstensibleObserver连接起来,代理真正的observer的一切
  */
 public class ObserverAgent<T> {
-    int lastVersion = START_VERSION;
+    int observerLastVersion = START_VERSION;//取代observer的version值控制
     @NonNull
     private LifecycleOwner mOwner;
     /**
@@ -41,6 +41,7 @@ public class ObserverAgent<T> {
         this.ostensibleObserver = ostensibleObserver;
         this.uuid = ostensibleObserver.uuid;
     }
+
     /**
      * @param observer
      * @return observer是否与已有的ObserverAgent建立联系
@@ -48,6 +49,7 @@ public class ObserverAgent<T> {
     public boolean isAttachedTo(Observer<? super T> observer) {
         return observer.equals(this.realObserver);
     }
+
     public boolean isAttachedTo(LifecycleOwner owner) {
         return this.mOwner == owner;
     }
@@ -63,8 +65,16 @@ public class ObserverAgent<T> {
 
     /**
      * 生成LiveData的observer（androidx.lifecycle.Observer类）,
-     * 并将真正的observer,且把onChanged方法代理给虚假的observer（OstensibleObserver类）的onChanged方法
+     * 并将真正的observer,且把onChanged方法代理给虚假的observer（OstensibleObserver类）的onChanged方法。
      *
+     * 若livedata已经存在，生成新的observer附加给已存在的livedata时，
+     *          observer的lastVersion==-1，livedata的mVersion>-1,
+     *          此时非粘性下observer不应接收到livedata之前的事件。
+     * 若livedata与observer都是新的，
+     *          observer的lastVersion==-1，livedata的mVersion==-1，
+     *          此时非粘性下observer应接收到livedata之前的事件。
+     *
+     * @param mVersion livedata的mVersion值
      * @return 返回ObserverAgent本身
      */
     public ObserverAgent<T> generateObserver(int mVersion) {
@@ -73,14 +83,14 @@ public class ObserverAgent<T> {
                 @Override
                 public void onChanged(T t) {
                     if (ostensibleObserver.isWantAcceptMessage()) {
-                        if (ostensibleObserver.isSticky() && lastVersion == START_VERSION)
+                        if (ostensibleObserver.isSticky() && observerLastVersion == START_VERSION)
                             ostensibleObserver.onChanged(t);
                         else {
                             //非粘性下，拦截推送给新创建的observer的消息
-                            if (lastVersion != START_VERSION)
+                            if (mVersion == START_VERSION && observerLastVersion == START_VERSION)
                                 ostensibleObserver.onChanged(t);
                         }
-                        lastVersion = mVersion;
+                        observerLastVersion = mVersion;
                     }
                 }
             };

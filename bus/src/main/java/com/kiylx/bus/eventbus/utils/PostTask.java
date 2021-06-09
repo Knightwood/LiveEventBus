@@ -8,6 +8,7 @@ import androidx.lifecycle.LifecycleOwner;
  * packageName：com.kiylx.bus.eventbus.utils
  * 描述：给handler的runnable的类,接受Method实例和用于Method执行的参数
  */
+@Deprecated
 public class PostTask implements Runnable {
     /**
      * newValue[0]:message
@@ -45,3 +46,25 @@ public class PostTask implements Runnable {
         void method(Object[] args);
     }
 }
+/*
+    // * args[0]: 消息
+    // * args[1]: LifecycleOwner,也就是sender
+     //
+private inner class PostMethod() : PostTask.Method {
+        override fun method(args: Array<Any>) {
+        val value: T? = args[0] as T
+        val owner: LifecycleOwner? = args[1] as LifecycleOwner
+        if (value != null && owner != null) {
+        //带生命周期的发送消息的时候sender处于非激活状态时，消息取消发送
+        if (owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+        inBox.value = value
+        }
+        }
+        if (value != null && owner == null) {
+        //不带有生命周期
+        inBox.value = value
+        }
+        }
+        }
+*
+* */

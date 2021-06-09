@@ -1,4 +1,6 @@
-package com.kiylx.bus.eventbus.core;
+package com.kiylx.bus.eventbus;
+
+import com.kiylx.bus.eventbus.core.Channel;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -12,7 +14,7 @@ import java.util.UUID;
  * 描述：存储消息通道，分发消息通道，全局配置调整
  */
 public class BusCore {
-    private final Map<String, Channel<Object>> mChannels;//存放通道
+    private final Map<String, Channel<Object>> mChannels;//存放消息通道
     private final Config config;//配置项
     private boolean lifecycleObserverAlwaysActive;
     private boolean autoClear;
@@ -30,7 +32,7 @@ public class BusCore {
 
     private static enum Singleton {
         INSTANCE;
-        private BusCore classInstance;
+        private final BusCore classInstance;
 
         Singleton() {
             classInstance = new BusCore();
@@ -55,22 +57,18 @@ public class BusCore {
     }
 
     public <T> Channel<T> get(UUID uuid) {
-        Iterator<Channel<Object>> item = mChannels.values().iterator();
-        while (item.hasNext()) {
-            Channel<Object> c = item.next();
+        for (Channel<Object> c : mChannels.values()) {
             if (c.getUuid().compareTo(uuid) == 0) {
-                return (Channel<T>) item;
+                return (Channel<T>) c;
             }
         }
         return null;
     }
 
     public <T> Channel<T> get(String target, UUID uuid) {
-        Iterator<Channel<Object>> item = mChannels.values().iterator();
-        while (item.hasNext()) {
-            Channel<Object> c = item.next();
+        for (Channel<Object> c : mChannels.values()) {
             if (c.getUuid().compareTo(uuid) == 0 && c.getKey().equals(target)) {
-                return (Channel<T>) item;
+                return (Channel<T>) c;
             }
         }
         return null;

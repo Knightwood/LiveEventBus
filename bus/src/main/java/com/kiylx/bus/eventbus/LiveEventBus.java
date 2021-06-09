@@ -1,6 +1,5 @@
 package com.kiylx.bus.eventbus;
 
-import com.kiylx.bus.eventbus.core.BusCore;
 import com.kiylx.bus.eventbus.core.Channel;
 import com.kiylx.bus.eventbus.core.interfaces.Mode;
 

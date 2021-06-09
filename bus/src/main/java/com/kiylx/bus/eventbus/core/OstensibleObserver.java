@@ -15,6 +15,7 @@ public abstract class OstensibleObserver<T> {
     //是否开启粘性，true：开启
     private boolean isSticky = true;
     private Config config;
+    private OstensibleObserver<T> outer=this;
 
     public boolean isSticky() {
         return isSticky;
@@ -44,12 +45,12 @@ public abstract class OstensibleObserver<T> {
 
     public class Config {
         public Config setSticky(boolean b) {
-            isSticky = b;
+            outer.isSticky = b;
             return this;
         }
 
         public Config setWantAcceptMessage(boolean b) {
-            wantAcceptMessage = b;
+            outer.wantAcceptMessage = b;
             return this;
         }
 
