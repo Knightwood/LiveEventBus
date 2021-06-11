@@ -3,7 +3,7 @@ package com.kiylx.liveeventbus
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.kiylx.bus.eventbus.LiveEventBus
+import com.kiylx.bus.eventbus.utils.LiveEventBus
 import com.kiylx.bus.eventbus.core.OstensibleObserver
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
@@ -28,24 +28,24 @@ class MainActivity : AppCompatActivity(),CoroutineScope {
             channel2.postDelay("ppp$i",10L)
         }
         LiveEventBus.with<String>("one").observe(this, object : OstensibleObserver<String?>() {
-            override fun onChanged(s: String?) {
-                Log.d(TAG, "onChanged1: $s")
+            override fun onChanged(t: String?) {
+                Log.d(TAG, "onChanged1: $t")
             }
         })
 
         launch(context = coroutineContext){
             delay(1000L)
             LiveEventBus.with<String>("one").observeSticky( this@MainActivity, object : OstensibleObserver<String?>() {
-                override fun onChanged(s: String?) {
-                    Log.d(TAG, "onChanged2: $s")
+                override fun onChanged(t: String?) {
+                    Log.d(TAG, "onChanged2: $t")
                 }
             })
         }
 
         launch(Dispatchers.IO){
             LiveEventBus.with<String>("two").observeSticky( this@MainActivity, object : OstensibleObserver<String?>() {
-                override fun onChanged(s: String?) {
-                    Log.d(TAG, "onChanged3: $s")
+                override fun onChanged(t: String?) {
+                    Log.d(TAG, "onChanged3: $t")
                 }
             })
         }

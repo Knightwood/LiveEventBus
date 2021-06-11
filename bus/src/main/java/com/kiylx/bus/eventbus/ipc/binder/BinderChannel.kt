@@ -2,14 +2,13 @@ package com.kiylx.bus.eventbus.ipc.binder
 
 import android.content.ComponentName
 import android.content.Intent
-import com.kiylx.bus.eventbus.core.Channel
 import com.kiylx.bus.eventbus.core.OstensibleObserver
 import com.kiylx.bus.eventbus.core.interfaces.BaseChannel
 import com.kiylx.bus.eventbus.core.interfaces.Mode
-import com.kiylx.bus.eventbus.ipc.binder.interfaces.Action
 import com.kiylx.bus.eventbus.ipc.binder.interfaces.ServiceInfo
 
-class CrossProcessChannel: BaseChannel() {//, Action
+class BinderChannel private constructor(): BaseChannel() {//, Action
+
 
     fun observeCrossProcess(ostensibleObserver: OstensibleObserver<T>, info: ServiceInfo) {
         observerCrossProcessInternal(ostensibleObserver
@@ -51,8 +50,12 @@ class CrossProcessChannel: BaseChannel() {//, Action
             return this
         }
 
-        fun build(): CrossProcessChannel {
-            return this@CrossProcessChannel
+        fun build(): BinderChannel {
+            return this@BinderChannel
         }
+    }
+    companion object{
+        @JvmStatic
+        val instance:BinderChannel by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { BinderChannel() }
     }
 }

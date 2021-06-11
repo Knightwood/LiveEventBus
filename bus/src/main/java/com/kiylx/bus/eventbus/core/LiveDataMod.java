@@ -15,7 +15,7 @@ import java.util.UUID;
  * packageName：com.kiylx.liveeventbus.live_event_bus
  * 描述：包装livedata
  */
-public class LiveDataMod<T> extends MutableLiveData<T> {
+class LiveDataMod<T> extends MutableLiveData<T> {
     public static final int START_VERSION = -1;
 
     private static int mVersion = START_VERSION;//自定义mVersion，取代liveData中对version值的控制
@@ -57,7 +57,7 @@ public class LiveDataMod<T> extends MutableLiveData<T> {
         super.removeObserver(observer);
         ObserverAgent<? super T> existing = get(observer);
         if (existing != null) {
-            this.mObservers.remove(existing.ostensibleObserver.uuid);
+            this.mObservers.remove(existing.ostensibleObserver.getUuid());
         }
     }
 

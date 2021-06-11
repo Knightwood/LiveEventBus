@@ -1,7 +1,7 @@
-package com.kiylx.bus.eventbus;
+package com.kiylx.bus.eventbus.utils;
 
+import com.kiylx.bus.eventbus.core.MainBusManager;
 import com.kiylx.bus.eventbus.core.Channel;
-import com.kiylx.bus.eventbus.core.interfaces.Mode;
 
 /**
  * 创建者 kiylx
@@ -11,19 +11,7 @@ import com.kiylx.bus.eventbus.core.interfaces.Mode;
  */
 public class LiveEventBus {
     public static <T> Channel<T> with(String channelName) {
-        return BusCore.getInstance().<T>get(channelName);
+        return MainBusManager.getInstance().<T>getChannel(channelName,null);
     }
 
-    public static <T> Channel<T> withCrossProcess(String channelName) {
-        return BusCore.getInstance().<T>get(channelName)
-                .config()
-                .setIsUseCrossProcess(Mode.binder)
-                .build();
-    }
-    public static <T> Channel<T> withCrossProcess(String channelName,Mode mode) {
-        return BusCore.getInstance().<T>get(channelName)
-                .config()
-                .setIsUseCrossProcess(mode)
-                .build();
-    }
 }

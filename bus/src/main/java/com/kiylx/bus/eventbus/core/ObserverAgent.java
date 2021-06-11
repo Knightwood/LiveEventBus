@@ -17,9 +17,10 @@ import static com.kiylx.bus.eventbus.core.LiveDataMod.START_VERSION;
  * 描述：虚假observer（OstensibleObserver类）与真正observer（androidx.lifecycle.Observer类）之间的桥梁,不是对于真正的observer的包装。
  * 将真正的observer与OstensibleObserver连接起来,代理真正的observer的一切
  */
-public class ObserverAgent<T> {
+class ObserverAgent<T> {
     int observerLastVersion = START_VERSION;//取代observer的version值控制
     @NonNull
+    @Deprecated
     private LifecycleOwner mOwner;
     /**
      * 真正的Observer的实例,liveData将会调用此observer的onChanged方法
@@ -36,10 +37,9 @@ public class ObserverAgent<T> {
     @NotNull
     OstensibleObserver<? super T> ostensibleObserver;
 
-
     public ObserverAgent(@NonNull OstensibleObserver<? super T> ostensibleObserver) {
         this.ostensibleObserver = ostensibleObserver;
-        this.uuid = ostensibleObserver.uuid;
+        this.uuid = ostensibleObserver.getUuid();
     }
 
     /**
@@ -55,10 +55,12 @@ public class ObserverAgent<T> {
     }
 
     @NonNull
+    @Deprecated
     public LifecycleOwner getOwner() {
         return this.mOwner;
     }
 
+    @Deprecated
     public void setOwner(@NonNull LifecycleOwner mOwner2) {
         this.mOwner = mOwner2;
     }
@@ -82,8 +84,8 @@ public class ObserverAgent<T> {
             realObserver = new Observer<T>() {
                 @Override
                 public void onChanged(T t) {
-                    if (ostensibleObserver.isWantAcceptMessage()) {
-                        if (ostensibleObserver.isSticky() && observerLastVersion == START_VERSION)
+                    if (ostensibleObserver.config().isWantAcceptMessage()) {
+                        if (ostensibleObserver.config().isSticky() && observerLastVersion == START_VERSION)
                             ostensibleObserver.onChanged(t);
                         else {
                             //非粘性下，拦截推送给新创建的observer的消息

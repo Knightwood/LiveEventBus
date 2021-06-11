@@ -24,14 +24,14 @@ public interface Action<T> {
      *
      * @param value 发送的消息
      */
-    void postAcrossProcess(T value);
+    //void postAcrossProcess(T value);
 
     /**
      * App之间发送消息
      *
      * @param value 发送的消息
      */
-    void postAcrossApp(T value);
+    //void postAcrossApp(T value);
 
     /**
      * 进程内发送消息，延迟发送
@@ -75,7 +75,7 @@ public interface Action<T> {
      * 注册一个Observer，生命周期感知，自动取消订阅
      *
      * @param owner    LifecycleOwner
-     * @param observer 观察者
+     * @param ostensibleObserver 观察者
      */
     void observe(@NonNull LifecycleOwner owner, @NonNull OstensibleObserver<T> ostensibleObserver);
 

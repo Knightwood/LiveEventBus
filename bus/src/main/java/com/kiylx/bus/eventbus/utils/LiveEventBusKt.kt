@@ -1,8 +1,13 @@
 package com.kiylx.bus.eventbus.utils
 
-import com.kiylx.bus.eventbus.BusCore
+import androidx.lifecycle.LifecycleOwner
+import com.kiylx.bus.eventbus.core.MainBusManager
 import com.kiylx.bus.eventbus.core.Channel
 import com.kiylx.bus.eventbus.core.interfaces.Mode
+import com.kiylx.bus.eventbus.ipc.CrossProcessBusManager
+import com.kiylx.bus.eventbus.ipc.binder.BinderChannel
+import com.kiylx.bus.eventbus.ipc.binder.interfaces.ServiceInfo
+import com.kiylx.bus.eventbus.ipc.boardcast.BoardCastChannel
 
 /**
  * 创建者 kiylx
@@ -10,22 +15,24 @@ import com.kiylx.bus.eventbus.core.interfaces.Mode
  * packageName：com.kiylx.liveeventbus.live_event_bus
  * 描述：
  */
-object LiveEventBusKt {
-    fun <T> with(channelName: String?): Channel<T> {
-        return BusCore.getInstance().get(channelName)
-    }
+/**
+ * @param channelLifeCycle 默认可以不传。
+ * 控制channel的生命周期
+ */
+fun <T> with(channelName: String, channelLifeCycle: LifecycleOwner? = null): Channel<T> {
+    return MainBusManager.instance.getChannel<T>(channelName, channelLifeCycle)
+}
 
-    fun <T> withCrossProcess(channelName: String?): Channel<T> {
-        return BusCore.getInstance().get<T>(channelName)
-                .config()
-                .setIsUseCrossProcess(Mode.binder)
-                .build()
-    }
+fun withCrossProcess(serviceInfo: ServiceInfo): BinderChannel {
+    return CrossProcessBusManager.instance.getChannel(serviceInfo)
+            .config()
+            .setIsUseCrossProcess(mode = Mode.binder)
+            .build()
+}
 
-    fun <T> withCrossProcess(channelName: String?, mode: Mode?): Channel<T> {
-        return BusCore.getInstance().get<T>(channelName)
-                .config()
-                .setIsUseCrossProcess(mode!!)
-                .build()
-    }
+fun withCrossProcess(): BoardCastChannel {
+    return CrossProcessBusManager.instance.getChannel()
+            .config()
+            .setIsUseCrossProcess(mode = Mode.broadcast)
+            .build()
 }

@@ -1,11 +1,9 @@
-package com.kiylx.bus.eventbus
+package com.kiylx.bus.eventbus.core
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
-import com.kiylx.bus.eventbus.core.Channel
 import com.kiylx.bus.eventbus.core.interfaces.BaseBusManager
-import com.kiylx.bus.eventbus.ipc.interfaces.ServiceInfo
 import java.util.*
 
 /**
@@ -14,7 +12,7 @@ import java.util.*
  * packageName：com.crystal.aplayer.module_base.tools.databus
  * 描述：存储消息通道，分发消息通道，全局配置调整.manager
  */
-class BusCore private constructor() :BaseBusManager,LifecycleOwner {
+class MainBusManager private constructor() :BaseBusManager,LifecycleOwner {
     private val mChannels //存放消息通道. Map<channelName,Channel<Object>>
             : MutableMap<String?, Channel<Any>>
     private val config //配置项
@@ -33,11 +31,7 @@ class BusCore private constructor() :BaseBusManager,LifecycleOwner {
      * 控制消息通道的生命周期。null时，消息通道默认的生命周期是BusCore控制
      * @return 返回消息通道
     </T> */
-    fun <T> get(target: String, lifecycleOwner: LifecycleOwner?=null): Channel<T> {
-        return getChannel(target, lifecycleOwner) as Channel<T>
-    }
-
-    private fun getChannel(target: String, lifecycleOwner: LifecycleOwner?): Any? {
+    fun <T> getChannel(target: String, lifecycleOwner: LifecycleOwner?=null): Channel<T> {
         if (!mChannels.containsKey(target)) {
             val channel = Channel<Any>(target)
             if (lifecycleOwner == null)
@@ -46,7 +40,7 @@ class BusCore private constructor() :BaseBusManager,LifecycleOwner {
                 lifecycleOwner.lifecycle.addObserver(channel)
             mChannels[target] = channel
         }
-        return mChannels[target]
+        return mChannels[target] as Channel<T>
     }
 
     /**
@@ -96,8 +90,8 @@ class BusCore private constructor() :BaseBusManager,LifecycleOwner {
 
     companion object {
         @JvmStatic
-        val instance: BusCore
-                by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { BusCore() }
+        val instance: MainBusManager
+                by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { MainBusManager() }
     }
 
     init {
