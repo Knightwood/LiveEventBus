@@ -6,6 +6,8 @@ import android.os.IBinder
 import com.kiylx.bus.eventbus.core.MainBusManager
 import com.kiylx.bus.eventbus.IClientListener
 import com.kiylx.bus.eventbus.IMessageManager
+import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
+import com.kiylx.bus.eventbus.ipc.binder.model.ServiceConnectInfo
 
 /**
  * 进程创建时调用，一般在 Application 的 onCreate 中调用
@@ -39,11 +41,11 @@ class MessageService() : Service() {
                 clientArr.remove(listener)
         }
 
-        override fun sendMessage() {
+        override fun sendMessage(message: EventMessage?) {
             TODO("Not yet implemented")
         }
 
-        override fun deleteObserver() {
+        override fun deleteObserver(connectInfo: ServiceConnectInfo?) {
             TODO("Not yet implemented")
         }
 

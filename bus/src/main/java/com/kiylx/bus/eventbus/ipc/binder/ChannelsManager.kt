@@ -12,6 +12,7 @@ import com.kiylx.bus.eventbus.IClientListener
 import com.kiylx.bus.eventbus.IMessageManager
 import com.kiylx.bus.eventbus.ipc.binder.aidl.MessageService
 import com.kiylx.bus.eventbus.ipc.binder.interfaces.ChannelsManagerAction
+import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
 import com.kiylx.bus.eventbus.ipc.binder.model.ServiceConnectInfo
 import com.kiylx.bus.eventbus.utils.Logs
 import java.util.*
@@ -33,10 +34,12 @@ class ChannelsManager : ChannelsManagerAction {
 
     var mProcessManager: IMessageManager? = null
     var mProcessCallback = object : IClientListener.Stub() {
-        override fun notifyMessage() {
+
+        override fun notifyDataChanged(message: EventMessage?) {
             TODO("根据参数发送数据给channel")
             //channelList["demo"]?.notifyObserver(data)
         }
+
 
     }
 

@@ -1,5 +1,6 @@
 package com.kiylx.bus.eventbus.utils
 
+import android.content.Context
 import androidx.lifecycle.LifecycleOwner
 import com.kiylx.bus.eventbus.core.MainBusManager
 import com.kiylx.bus.eventbus.core.Channel
@@ -23,16 +24,13 @@ fun <T> with(channelName: String, channelLifeCycle: LifecycleOwner? = null): Cha
     return MainBusManager.instance.getChannel<T>(channelName, channelLifeCycle)
 }
 
-fun withCrossProcess(serviceConnectInfo: ServiceConnectInfo): CrossChannel<Any?> {
-    return CrossProcessBusManager.instance.getChannel(serviceConnectInfo)
-            .config()
-            .setIsUseCrossProcess(mode = Mode.binder)
-            .build()
+fun<T> withCrossProcess(context:Context,serviceConnectInfo: ServiceConnectInfo): CrossChannel<T>? {
+    return CrossProcessBusManager.instance.getChannel<T>(context,serviceConnectInfo)
 }
 
-fun withCrossProcess(): BoardCastChannel {
+/*fun withCrossProcess(): BoardCastChannel {
     return CrossProcessBusManager.instance.getChannel()
             .config()
             .setIsUseCrossProcess(mode = Mode.broadcast)
             .build()
-}
+}*/
