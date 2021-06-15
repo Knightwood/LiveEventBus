@@ -20,7 +20,6 @@ abstract class OstensibleObserver<T> {
      */
     abstract fun onChanged(t: T)
 
-
     fun config(): Config {
         return config
     }

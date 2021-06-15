@@ -30,13 +30,21 @@ class MessageService() : Service() {
         override fun registerListener(listener: IClientListener?) {
             if (listener != null) {
                 clientArr.add(listener)
-                generate(listener)
+                //generate(listener)
             }
         }
 
         override fun unregisterListener(listener: IClientListener?) {
             if (listener != null)
                 clientArr.remove(listener)
+        }
+
+        override fun sendMessage() {
+            TODO("Not yet implemented")
+        }
+
+        override fun deleteObserver() {
+            TODO("Not yet implemented")
         }
 
     }

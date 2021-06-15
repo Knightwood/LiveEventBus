@@ -1,15 +1,9 @@
 package com.kiylx.bus.eventbus.core
 
-import android.content.ComponentName
-import android.content.Intent
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.OnLifecycleEvent
 import com.kiylx.bus.eventbus.core.interfaces.Action
 import com.kiylx.bus.eventbus.core.interfaces.BaseChannel
-import com.kiylx.bus.eventbus.core.interfaces.Mode
-import com.kiylx.bus.eventbus.ipc.binder.interfaces.ServiceInfo
 import com.kiylx.bus.eventbus.utils.Utils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.actor
@@ -17,7 +11,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flowOn
 import java.util.*
-import kotlin.coroutines.CoroutineContext
 
 
 /**
@@ -27,7 +20,7 @@ import kotlin.coroutines.CoroutineContext
  * 描述：推送事件由通道实现.
  * T : 消息类
  */
-class Channel<T>(val channelName: String) : BaseChannel(), Action<T> {
+public open class Channel<T>(val channelName: String) : BaseChannel(), Action<T> {
     private val config: Config by lazy { Config() }
     private val inBox = LiveDataMod<T>()//存放消息的信箱
 
