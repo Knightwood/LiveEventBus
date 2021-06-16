@@ -1,4 +1,4 @@
-package com.kiylx.bus.eventbus.ipc.binder.aidl
+package com.kiylx.bus.eventbus.ipc.binder.services
 
 import android.app.Service
 import android.content.Intent
@@ -7,7 +7,8 @@ import com.kiylx.bus.eventbus.core.MainBusManager
 import com.kiylx.bus.eventbus.IClientListener
 import com.kiylx.bus.eventbus.IMessageManager
 import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
-import com.kiylx.bus.eventbus.ipc.binder.model.ServiceConnectInfo
+import com.kiylx.bus.eventbus.ipc.binder.model.ChannelsConnectInfo
+import com.kiylx.bus.eventbus.ipc.binder.model.ConnectResult
 
 /**
  * 进程创建时调用，一般在 Application 的 onCreate 中调用
@@ -41,11 +42,31 @@ class MessageService() : Service() {
                 clientArr.remove(listener)
         }
 
+        /**
+         * 发送数据到服务端
+         */
         override fun sendMessage(message: EventMessage?) {
             TODO("Not yet implemented")
         }
 
-        override fun deleteObserver(connectInfo: ServiceConnectInfo?) {
+        /**
+         * 删除服务端的一个observer
+         */
+        override fun deleteObserver(connectInfo: ChannelsConnectInfo?) {
+            TODO("Not yet implemented")
+        }
+
+        /**
+         * 添加一个监听某个channel的observer到服务端
+         */
+        override fun requestConnect(connectInfo: ChannelsConnectInfo?): ConnectResult {
+            TODO("对某个channel添加observer")
+        }
+
+        /**
+         * 从服务端的某个channel中拿一次数据
+         */
+        override fun getMessageOnces(connectInfo: ChannelsConnectInfo?): EventMessage {
             TODO("Not yet implemented")
         }
 

@@ -4,15 +4,16 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
 import android.text.TextUtils
-import com.kiylx.bus.eventbus.ipc.binder.aidl.MessageService
-import com.kiylx.bus.eventbus.ipc.binder.model.ServiceConnectInfo
+import com.kiylx.bus.eventbus.ipc.binder.services.MessageService
+import com.kiylx.bus.eventbus.ipc.binder.model.ChannelsConnectInfo
 import com.kiylx.bus.eventbus.utils.Logs
 
-fun getServiceName(serviceConnectInfo: ServiceConnectInfo): String {
-    return serviceConnectInfo.pkgName + serviceConnectInfo.clsName
+fun getServiceName(channelsConnectInfo: ChannelsConnectInfo): String {
+    return channelsConnectInfo.pkgName + channelsConnectInfo.clsName
 }
-fun getServiceName(context: Context):String?{
-    var mPkgName:String?=null
+
+fun getServiceName(context: Context): String? {
+    var mPkgName: String? = null
     try {
         val cn = ComponentName(context, MessageService::class.java)
         val info = context.packageManager.getServiceInfo(cn, PackageManager.GET_META_DATA)

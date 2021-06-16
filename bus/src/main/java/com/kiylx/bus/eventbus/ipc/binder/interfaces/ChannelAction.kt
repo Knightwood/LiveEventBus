@@ -1,5 +1,7 @@
 package com.kiylx.bus.eventbus.ipc.binder.interfaces
 
+import java.util.*
+
 interface ChannelAction {
-    fun destroyObserver()
+    fun destroyObserver(uuid: UUID)
 }

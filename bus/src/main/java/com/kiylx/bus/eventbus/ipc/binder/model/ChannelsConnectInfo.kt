@@ -7,9 +7,11 @@ import kotlinx.android.parcel.Parcelize
  * 描述客户端所要连接到的服务端的信息。
  * @param pkgName service的包名
  * @param clsName service类名
- * @param isBound service是否连接
+ * @param channelName 要监听的通道
  */
 @Parcelize
-data class ServiceConnectInfo(val pkgName: String,
-                              val clsName: String,
-                              var isBound: Boolean = false) : Parcelable
+data class ChannelsConnectInfo(val pkgName: String,
+                               val clsName: String,
+                               val channelName: String) : Parcelable
+
+

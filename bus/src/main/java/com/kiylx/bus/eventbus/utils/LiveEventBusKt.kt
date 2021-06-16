@@ -4,11 +4,9 @@ import android.content.Context
 import androidx.lifecycle.LifecycleOwner
 import com.kiylx.bus.eventbus.core.MainBusManager
 import com.kiylx.bus.eventbus.core.Channel
-import com.kiylx.bus.eventbus.core.interfaces.Mode
 import com.kiylx.bus.eventbus.ipc.binder.CrossProcessBusManager
 import com.kiylx.bus.eventbus.ipc.binder.CrossChannel
-import com.kiylx.bus.eventbus.ipc.binder.model.ServiceConnectInfo
-import com.kiylx.bus.eventbus.ipc.boardcast.BoardCastChannel
+import com.kiylx.bus.eventbus.ipc.binder.model.ChannelsConnectInfo
 
 /**
  * 创建者 kiylx
@@ -24,8 +22,8 @@ fun <T> with(channelName: String, channelLifeCycle: LifecycleOwner? = null): Cha
     return MainBusManager.instance.getChannel<T>(channelName, channelLifeCycle)
 }
 
-fun<T> withCrossProcess(context:Context,serviceConnectInfo: ServiceConnectInfo): CrossChannel<T>? {
-    return CrossProcessBusManager.instance.getChannel<T>(context,serviceConnectInfo)
+fun <T> withCrossProcess(context: Context, channelsConnectInfo: ChannelsConnectInfo): CrossChannel<T>? {
+    return CrossProcessBusManager.instance.getChannel<T>(context, channelsConnectInfo)
 }
 
 /*fun withCrossProcess(): BoardCastChannel {

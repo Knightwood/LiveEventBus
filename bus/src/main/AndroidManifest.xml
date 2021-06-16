@@ -8,7 +8,7 @@
 
     <application>
         <service
-            android:name=".eventbus.ipc.binder.aidl.MessageService"
+            android:name=".eventbus.ipc.binder.services.MessageService"
             android:enabled="true"
             android:exported="${BUS_SUPPORT_MULTI_APP}"
             android:permission="${BUS_MAIN_APPLICATION_ID}.bus_ipc.PERMISSION"
