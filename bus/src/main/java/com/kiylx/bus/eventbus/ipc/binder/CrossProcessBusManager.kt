@@ -6,8 +6,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.kiylx.bus.eventbus.core.interfaces.BaseBusManager
 import com.kiylx.bus.eventbus.ipc.binder.interfaces.CrossProcessBusManagerAction
-import com.kiylx.bus.eventbus.ipc.binder.model.ChannelsConnectInfo
-import com.kiylx.bus.eventbus.ipc.binder.model.ServiceConnectInfo
+import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
 import java.util.*
 
 
@@ -24,20 +23,21 @@ class CrossProcessBusManager private constructor() : BaseBusManager, LifecycleOw
     private val mContext: Context? = null
 
     /**
-     * 根据connectInfo查找ChannelsManager,ChannelsManager不存在就创建它,并通过ChannelsManager获得channel。
+     * 根据connectInfo查找ChannelsManager,ChannelsManager不存在就创建并初始化,并通过ChannelsManager获得channel。
      * @return 返回消息通道
      *
      * 查找channel,channel不存在，生成实例。channel存在，返回它
      */
-    fun <T> getChannel(context: Context, connectInfo: ChannelsConnectInfo): CrossChannel<T>? {
+    fun <T> getChannel(context: Context, connectInfo: ChannelConnectInfo): CrossChannel<T>? {
         val serviceName = (connectInfo.pkgName + connectInfo.clsName)
-        if (channelsManagerMap.containsKey(serviceName))
-            return channelsManagerMap[serviceName]?.getChannel<T>(connectInfo)
+        //ChannelsManager存在，获得channel。不存在，new出来初始化并获得channel
+        return if (channelsManagerMap.containsKey(serviceName))
+            channelsManagerMap[serviceName]?.getChannel<T>(connectInfo)
         else {
             val channelsManager = ChannelsManager(context, this@CrossProcessBusManager)
             channelsManager.initManager(context, connectInfo)
             channelsManagerMap[serviceName] = channelsManager
-            return channelsManager.getChannel(channelInfo = connectInfo)
+            channelsManager.getChannel(channelInfo = connectInfo)
         }
     }
 
@@ -88,9 +88,8 @@ class CrossProcessBusManager private constructor() : BaseBusManager, LifecycleOw
     /**
      * 删除不再使用的channelsManager
      */
-    override fun deleteChannelsManager(info: ServiceConnectInfo) {
-        val serviceName = (info.pkgName + info.clsName)
-        channelsManagerMap.remove(serviceName)
+    override fun deleteChannelsManager(info: String) {
+        channelsManagerMap.remove(info)
     }
 
 }

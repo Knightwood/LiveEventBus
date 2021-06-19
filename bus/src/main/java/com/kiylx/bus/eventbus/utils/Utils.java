@@ -12,4 +12,5 @@ public class Utils {
     public static boolean isMainThread() {
         return Looper.myLooper() == Looper.getMainLooper();
     }
+
 }

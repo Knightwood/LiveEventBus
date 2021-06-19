@@ -187,6 +187,14 @@ public open class Channel<T>(val channelName: String) : BaseChannel(), Action<T>
         return null
     }
 
+    fun getDataOnce(): T? {
+        return inBox.value
+    }
+
+    fun convertToJson(): String {
+        // TODO: 2021/6/19
+    }
+
     fun config(): Config {
         return config
     }

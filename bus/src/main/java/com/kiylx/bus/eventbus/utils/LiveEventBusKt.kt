@@ -6,7 +6,7 @@ import com.kiylx.bus.eventbus.core.MainBusManager
 import com.kiylx.bus.eventbus.core.Channel
 import com.kiylx.bus.eventbus.ipc.binder.CrossProcessBusManager
 import com.kiylx.bus.eventbus.ipc.binder.CrossChannel
-import com.kiylx.bus.eventbus.ipc.binder.model.ChannelsConnectInfo
+import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
 
 /**
  * 创建者 kiylx
@@ -22,8 +22,8 @@ fun <T> with(channelName: String, channelLifeCycle: LifecycleOwner? = null): Cha
     return MainBusManager.instance.getChannel<T>(channelName, channelLifeCycle)
 }
 
-fun <T> withCrossProcess(context: Context, channelsConnectInfo: ChannelsConnectInfo): CrossChannel<T>? {
-    return CrossProcessBusManager.instance.getChannel<T>(context, channelsConnectInfo)
+fun <T> withCrossProcess(context: Context, channelConnectInfo: ChannelConnectInfo): CrossChannel<T>? {
+    return CrossProcessBusManager.instance.getChannel<T>(context, channelConnectInfo)
 }
 
 /*fun withCrossProcess(): BoardCastChannel {

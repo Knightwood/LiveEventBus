@@ -1,6 +1,5 @@
 package com.kiylx.bus.eventbus.ipc.binder
 
-import android.app.Application
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -13,14 +12,12 @@ import com.kiylx.bus.eventbus.ipc.binder.interfaces.ChannelsManagerAction
 import com.kiylx.bus.eventbus.ipc.binder.interfaces.CrossProcessBusManagerAction
 import com.kiylx.bus.eventbus.ipc.binder.model.*
 import com.kiylx.bus.eventbus.utils.Logs
-import com.kiylx.bus.eventbus.utils.Weak
 import java.util.*
 
 /**
  * 一个ChannelsManager连接到一个service,并管理着一堆channel，channel下有很多observers
  */
 class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossProcessBusManagerAction) : ChannelsManagerAction {
-    private lateinit var mServiceConnectInfo: ServiceConnectInfo//连接信息，连接到哪个服务
     private var mCrossProcessBusManagerAction = crossProcessBusManagerAction
     var uuid: UUID = UUID.randomUUID()
         private set
@@ -31,19 +28,24 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
 
     var mProcessManager: IMessageManager.Stub? = null
     var mProcessCallback: IClientListener.Stub? = null
+    //连接信息，连接到哪个服务
+    var pkgName: String?=null
+    var clsName: String?=null
+    var isBound: Boolean = false
 
     /**
      * 从服务端拉取一次消息,
      */
-    private fun <T> getRemoteDataOnces(channelInfo: ChannelsConnectInfo): T {
-        TODO("Not yet implemented")
+    private fun <T> getRemoteDataOnces(channelInfo: ChannelConnectInfo): T {
+       val message:EventMessage?= mProcessManager?.getMessageOnces(channelInfo)
+        return parseMessage(message) as T
     }
 
     /**
      *  向服务端发送数据或消息
      */
     override fun <T : Any?> send(data: T) {
-        TODO("把data转换成EventMessage发送到服务端")
+        mProcessManager?.sendMessage(generateMessage(data))
     }
 
     /**
@@ -51,27 +53,28 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
      * 2.删除本地的channel
      * 3.channelsManager中不再有任何一个channel,销毁自身，并请求上层删除channelsManager
      */
-    override fun destroyChannel(connectInfo: ChannelsConnectInfo) {
+    override fun destroyChannel(connectInfo: ChannelConnectInfo) {
         synchronized(channelList) {
             channelList.remove(connectInfo.channelName)// 删除本地channel
             mProcessManager?.deleteObserver(connectInfo)//请求服务端删除服务端对特定channel监听的服务端observer
             if (channelList.isEmpty()) {
-                mCrossProcessBusManagerAction.deleteChannelsManager(mServiceConnectInfo)
+                mCrossProcessBusManagerAction.deleteChannelsManager(pkgName+clsName)
                 destroySelf()
             }
         }
     }
 
-    fun initManager(context: Context, connectInfo: ChannelsConnectInfo) {
-        mServiceConnectInfo = ServiceConnectInfo(connectInfo.pkgName, connectInfo.clsName)
-        bindService(context, mServiceConnectInfo)
+    fun initManager(context: Context, connectInfo: ChannelConnectInfo) {
+        this.pkgName=connectInfo.pkgName
+        this.clsName=connectInfo.clsName
+        bindService(context)
     }
 
     private fun destroySelf() {
         unbindService()
     }
 
-    fun <T> getChannel(channelInfo: ChannelsConnectInfo): CrossChannel<T>? {
+    fun <T> getChannel(channelInfo: ChannelConnectInfo): CrossChannel<T>? {
         synchronized(channelList) {
             var channel: CrossChannel<Any?>? = channelList.getValue(channelInfo.channelName)
             if (channel == null) {
@@ -97,7 +100,11 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
 
                     override fun notifyDataChanged(message: EventMessage?) {
                         TODO("根据参数，把message解析成特定类型，发送给channel")
-                        //channelList["demo"]?.notifyObserver(data)
+                        //channelList[message.]?.notifyObserver(data)
+                    }
+
+                    override fun getLocateFrom(): String {
+                        TODO("Not yet implemented")
                     }
 
                 }
@@ -116,22 +123,22 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
         }
     }
 
-    private fun bindService(context: Context, connectInfo: ServiceConnectInfo) {
+    private fun bindService(context: Context) {
         //连接到服务端
         val intent = Intent(Intent.ACTION_MAIN)
-        intent.component = ComponentName(connectInfo.pkgName, connectInfo.clsName)
-        mServiceConnectInfo.isBound = context.bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE)
-        if (!mServiceConnectInfo.isBound) {
-            Logs.e(CrossChannel.tag, "Can not find the host app under :${connectInfo.pkgName}")
+        intent.component = ComponentName(pkgName!!, clsName!!)
+        isBound = context.bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE)
+        if (!isBound) {
+            Logs.e(CrossChannel.tag, "Can not find the host app under :${pkgName}")
             if (Logs.DEBUG >= Logs.nowLevel) {
-                throw RuntimeException("Can not find the host app under :" + connectInfo.pkgName)
+                throw RuntimeException("Can not find the host app under :" + pkgName)
             }
         }
     }
 
 
     private fun unbindService() {
-        if (mServiceConnectInfo.isBound) {
+        if (isBound) {
             mContext?.unbindService(mServiceConnection)
             if (mProcessManager != null && mProcessManager!!.asBinder().isBinderAlive()) {
                 try {
@@ -141,7 +148,7 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
                     e.printStackTrace()
                 }
             }
-            mServiceConnectInfo.isBound = false
+            isBound = false
             mContext = null
             mProcessCallback = null
             mProcessManager = null

@@ -3,11 +3,10 @@ package com.kiylx.bus.eventbus.ipc.binder.services
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import com.kiylx.bus.eventbus.core.MainBusManager
 import com.kiylx.bus.eventbus.IClientListener
 import com.kiylx.bus.eventbus.IMessageManager
 import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
-import com.kiylx.bus.eventbus.ipc.binder.model.ChannelsConnectInfo
+import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
 import com.kiylx.bus.eventbus.ipc.binder.model.ConnectResult
 
 /**
@@ -27,59 +26,58 @@ import com.kiylx.bus.eventbus.ipc.binder.model.ConnectResult
  */
 
 class MessageService() : Service() {
-    private var mainBusManager: MainBusManager? = null
-    private val clientArr: MutableList<IClientListener> by lazy { mutableListOf() }
+    private var mProcessManager:ProcessManager= ProcessManager.instance
+
     private var mBinder = object : IMessageManager.Stub() {
         override fun registerListener(listener: IClientListener?) {
             if (listener != null) {
-                clientArr.add(listener)
-                //generate(listener)
+                mProcessManager.registerLocate(listener)
             }
         }
 
         override fun unregisterListener(listener: IClientListener?) {
             if (listener != null)
-                clientArr.remove(listener)
+                mProcessManager.unregisterLocate(listener)
         }
 
         /**
          * 发送数据到服务端
          */
         override fun sendMessage(message: EventMessage?) {
-            TODO("Not yet implemented")
+            mProcessManager.dispatchMsgToChannel(message)
         }
 
         /**
          * 删除服务端的一个observer
          */
-        override fun deleteObserver(connectInfo: ChannelsConnectInfo?) {
-            TODO("Not yet implemented")
+        override fun deleteObserver(connectInfo: ChannelConnectInfo?) {
+            mProcessManager.unListenChannel(connectInfo)
         }
 
         /**
          * 添加一个监听某个channel的observer到服务端
          */
-        override fun requestConnect(connectInfo: ChannelsConnectInfo?): ConnectResult {
-            TODO("对某个channel添加observer")
+        override fun requestConnect(connectInfo: ChannelConnectInfo?): ConnectResult {
+          return  mProcessManager.listenChannel(connectInfo)
         }
 
         /**
          * 从服务端的某个channel中拿一次数据
          */
-        override fun getMessageOnces(connectInfo: ChannelsConnectInfo?): EventMessage {
-            TODO("Not yet implemented")
+        override fun getMessageOnces(connectInfo: ChannelConnectInfo?): EventMessage {
+           return mProcessManager.getMessage(connectInfo)
         }
 
     }
 
     override fun onCreate() {
         super.onCreate()
-        mainBusManager = MainBusManager.instance
+
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        mainBusManager=null
+       mProcessManager.destroy()
     }
 
     override fun onBind(intent: Intent): IBinder {

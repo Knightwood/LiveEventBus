@@ -5,11 +5,12 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.text.TextUtils
 import com.kiylx.bus.eventbus.ipc.binder.services.MessageService
-import com.kiylx.bus.eventbus.ipc.binder.model.ChannelsConnectInfo
+import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
+import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
 import com.kiylx.bus.eventbus.utils.Logs
 
-fun getServiceName(channelsConnectInfo: ChannelsConnectInfo): String {
-    return channelsConnectInfo.pkgName + channelsConnectInfo.clsName
+fun getServiceName(channelConnectInfo: ChannelConnectInfo): String {
+    return channelConnectInfo.pkgName + channelConnectInfo.clsName
 }
 
 fun getServiceName(context: Context): String? {
@@ -37,4 +38,20 @@ fun getServiceName(context: Context): String? {
         e.printStackTrace()
     }
     return mPkgName
+}
+
+fun generateMessage(connectInfo: ChannelConnectInfo, t: Any): EventMessage? {
+    TODO("Not yet implemented")
+}
+
+fun <T> generateMessage(t: T): EventMessage? {
+    TODO("Not yet implemented")
+}
+
+fun parseMessage(message: EventMessage?): Any {
+    TODO("Not yet implemented")
+}
+
+fun generateMsgFromString(json: String?): Any {
+    TODO("Not yet implemented")
 }

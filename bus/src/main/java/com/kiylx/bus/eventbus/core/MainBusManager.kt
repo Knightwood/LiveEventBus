@@ -27,7 +27,7 @@ class MainBusManager private constructor() :BaseBusManager,LifecycleOwner {
     /**
      * @param <T>    消息通道的泛型类
      * @param target 消息通道名称
-     * @param lifecycleOwner 生命周期，比如让channel跟随某个activity的lifecycle，destroy时不再发送消息。
+     * @param lifecycleOwner 生命周期，比如让channel跟随某个activity的lifecycle，destroy时不再发送消息。默认传入null，让channel跟随BusManager的生命周期
      * 控制消息通道的生命周期。null时，消息通道默认的生命周期是BusCore控制
      * @return 返回消息通道
     </T> */
@@ -41,6 +41,19 @@ class MainBusManager private constructor() :BaseBusManager,LifecycleOwner {
             mChannels[target] = channel
         }
         return mChannels[target] as Channel<T>
+    }
+
+    fun getChannel2(target: String, lifecycleOwner: LifecycleOwner?=null): Channel<Any>? {
+        if (!mChannels.containsKey(target)) {
+           /* val channel = Channel<Any>(target)
+            if (lifecycleOwner == null)
+                lifecycleRegistry.addObserver(channel)
+            else
+                lifecycleOwner.lifecycle.addObserver(channel)
+            mChannels[target] = channel*/
+        return null
+        }
+        return mChannels[target] as Channel<Any>
     }
 
     /**

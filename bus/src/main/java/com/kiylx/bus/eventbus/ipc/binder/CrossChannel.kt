@@ -7,16 +7,16 @@ import com.kiylx.bus.eventbus.core.interfaces.Mode
 import com.kiylx.bus.eventbus.ipc.binder.base.ObserverWrapper
 import com.kiylx.bus.eventbus.ipc.binder.interfaces.ChannelAction
 import com.kiylx.bus.eventbus.ipc.binder.interfaces.ChannelsManagerAction
-import com.kiylx.bus.eventbus.ipc.binder.model.ChannelsConnectInfo
+import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
 import java.util.*
 
 /**
  * 同一个channel中存储着所有关注同一个远程消息发布者(同一种消息或数据)的观察者。
  * 一个channel监听同一种消息或者说数据
  */
-class CrossChannel<T>(channelsManagerAction: ChannelsManagerAction, channelInfo: ChannelsConnectInfo) : BaseChannel(), ChannelAction {
+class CrossChannel<T>(channelsManagerAction: ChannelsManagerAction, channelInfo: ChannelConnectInfo) : BaseChannel(), ChannelAction {
     val tag = "跨进程Channel"
-    private var connectInfo: ChannelsConnectInfo = channelInfo //连接信息，连接到哪个服务
+    private var connectInfo: ChannelConnectInfo = channelInfo //连接信息，连接到哪个服务
     private var observersMap: MutableMap<UUID, ObserverWrapper<*>> = mutableMapOf()//观察同一个消息源的观察者集合
     private var mChannelsManagerAction: ChannelsManagerAction? = channelsManagerAction
     private var locateData: T? = null//从service拿到的数据副本
@@ -100,7 +100,7 @@ class CrossChannel<T>(channelsManagerAction: ChannelsManagerAction, channelInfo:
         //可配置项
         private var procressLimit = false//进程隔离
 
-        fun setConnectInfo(connInfo: ChannelsConnectInfo): Config {
+        fun setConnectInfo(connInfo: ChannelConnectInfo): Config {
             connectInfo = connInfo
             return this
         }

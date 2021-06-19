@@ -7,32 +7,41 @@ import android.os.Parcelable;
  * 进程间缓存事件封装类，事件定义
  */
 public class EventMessage implements Parcelable {
-    // 发送事件所在进程
-    String processName;
-    // 发送事件到某个channel
-    String channel;
+    //服务端
+    public String remoteProcessName;
+    //客户端
+    public String locateProcessName;
+    // 事件属于哪个channel
+    public String channel;
     // 发送的事件名
-    String event;
+    public String event;
     // 发送的事件类型
-    String type;
+    public String type;
     // 发送的事件值的JSON串
-    String json;
+    public String json;
 
 
     public EventMessage() {
     }
 
-    public EventMessage(final String processName, final String channel, final String event, final String type, final boolean multiProcess) {
-        this(processName, channel, event, type, null);
+    public EventMessage(final String remoteProcessName,
+                        final String locateProcessName,
+                        final String channel,
+                        final String event,
+                        final String type,
+                        final boolean multiProcess) {
+        this(remoteProcessName, locateProcessName, channel, event, type, null);
     }
 
-    public EventMessage(final String processName,
+    public EventMessage(final String remoteProcessName,
+                        final String locateProcessName,
                         final String channel,
                         final String event,
                         final String type,
                         final String json
     ) {
-        this.processName = processName;
+        this.remoteProcessName = remoteProcessName;
+        this.locateProcessName = locateProcessName;
         this.channel = channel;
         this.event = event;
         this.type = type;
@@ -40,7 +49,8 @@ public class EventMessage implements Parcelable {
     }
 
     protected EventMessage(Parcel in) {
-        processName = in.readString();
+        remoteProcessName = in.readString();
+        locateProcessName = in.readString();
         channel = in.readString();
         event = in.readString();
         type = in.readString();
@@ -59,7 +69,8 @@ public class EventMessage implements Parcelable {
     @Override
     public String toString() {
         return "{" +
-                "processName='" + processName + '\'' +
+                "remoteProcessName='" + remoteProcessName + '\'' +
+                "locateProcessName='" + locateProcessName + '\'' +
                 ", channel='" + channel + '\'' +
                 ", event='" + event + '\'' +
                 ", type='" + type + '\'' +
@@ -86,7 +97,8 @@ public class EventMessage implements Parcelable {
 
     @Override
     public void writeToParcel(final Parcel dest, final int flags) {
-        dest.writeString(processName);
+        dest.writeString(remoteProcessName);
+        dest.writeString(locateProcessName);
         dest.writeString(channel);
         dest.writeString(event);
         dest.writeString(type);
@@ -94,7 +106,8 @@ public class EventMessage implements Parcelable {
     }
 
     public void readFromParcel(Parcel reply) {
-        processName = reply.readString();
+        remoteProcessName = reply.readString();
+        locateProcessName = reply.readString();
         channel = reply.readString();
         event = reply.readString();
         type = reply.readString();
