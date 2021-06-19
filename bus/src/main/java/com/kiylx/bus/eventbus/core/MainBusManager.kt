@@ -3,6 +3,7 @@ package com.kiylx.bus.eventbus.core
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import com.google.gson.Gson
 import com.kiylx.bus.eventbus.core.interfaces.BaseBusManager
 import java.util.*
 
@@ -23,7 +24,7 @@ class MainBusManager private constructor() :BaseBusManager,LifecycleOwner {
     override fun getLifecycle(): Lifecycle {
         return lifecycleRegistry
     }
-
+val gson:Gson by    lazy { Gson() }
     /**
      * @param <T>    消息通道的泛型类
      * @param target 消息通道名称

@@ -3,11 +3,11 @@ package com.kiylx.bus.eventbus.ipc.binder
 import androidx.lifecycle.LifecycleOwner
 import com.kiylx.bus.eventbus.core.OstensibleObserver
 import com.kiylx.bus.eventbus.core.interfaces.BaseChannel
-import com.kiylx.bus.eventbus.core.interfaces.Mode
 import com.kiylx.bus.eventbus.ipc.binder.base.ObserverWrapper
 import com.kiylx.bus.eventbus.ipc.binder.interfaces.ChannelAction
 import com.kiylx.bus.eventbus.ipc.binder.interfaces.ChannelsManagerAction
 import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
+import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
 import java.util.*
 
 /**
@@ -24,10 +24,6 @@ class CrossChannel<T>(channelsManagerAction: ChannelsManagerAction, channelInfo:
     fun observe(lifecycleOwner: LifecycleOwner, ostensibleObserver: OstensibleObserver<T>): Unit {
         val observerWrapper = putIfAbsent(lifecycleOwner, ostensibleObserver)
         if (observerWrapper != null) {
-            ostensibleObserver
-                    .Config()
-                    .setCrossProcess(Mode.binder)
-                    .build()
             if (observerWrapper.observer.config().isSticky && observerWrapper.firstNotify) {
                 if (locateData != null) {
                     val tmp = locateData
@@ -43,7 +39,7 @@ class CrossChannel<T>(channelsManagerAction: ChannelsManagerAction, channelInfo:
      * 向服务端发送数据
      */
     fun <T> sendToRemote(data: T) {
-        mChannelsManagerAction?.send(data)
+        mChannelsManagerAction?.send(generateMessage(data))
     }
 
     /**
@@ -89,6 +85,21 @@ class CrossChannel<T>(channelsManagerAction: ChannelsManagerAction, channelInfo:
         }
     }
 
+    fun notifyObserver2(data: EventMessage?) {
+        // 遍历map并发送数据
+        locateData = convertJson(data)
+        observersMap.values.forEach {
+            (it as ObserverWrapper<T>).notify(locateData!!)
+        }
+    }
+
+    fun <T> generateMessage(t: T): EventMessage? {
+        TODO("Not yet implemented")
+    }
+
+    fun<T> convertJson(json: EventMessage?): T {
+        TODO("Not yet implemented")
+    }
 
     private val config: Config by lazy { Config() }
 

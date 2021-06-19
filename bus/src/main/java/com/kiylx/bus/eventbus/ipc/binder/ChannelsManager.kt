@@ -32,20 +32,21 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
     var pkgName: String?=null
     var clsName: String?=null
     var isBound: Boolean = false
+    lateinit var currentProcessName:String
 
     /**
      * 从服务端拉取一次消息,
      */
-    private fun <T> getRemoteDataOnces(channelInfo: ChannelConnectInfo): T {
+    private fun  getRemoteDataOnces(channelInfo: ChannelConnectInfo): EventMessage? {
        val message:EventMessage?= mProcessManager?.getMessageOnces(channelInfo)
-        return parseMessage(message) as T
+        return message
     }
 
     /**
      *  向服务端发送数据或消息
      */
-    override fun <T : Any?> send(data: T) {
-        mProcessManager?.sendMessage(generateMessage(data))
+    override fun send(data: EventMessage) {
+        mProcessManager?.sendMessage(data)
     }
 
     /**
@@ -67,6 +68,7 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
     fun initManager(context: Context, connectInfo: ChannelConnectInfo) {
         this.pkgName=connectInfo.pkgName
         this.clsName=connectInfo.clsName
+        currentProcessName= getProcessName(context)
         bindService(context)
     }
 
@@ -84,7 +86,7 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
                 if (connect == null || connect.code != ResultCode.success) {
                     return null
                 } else {//建立连接后拉取一次消息推送给本地channel
-                    (channel as CrossChannel<T>).notifyObserver(getRemoteDataOnces(channelInfo))
+                    (channel as CrossChannel<T>).notifyObserver2(getRemoteDataOnces(channelInfo))
                 }
 
             }
@@ -97,14 +99,15 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
             mProcessManager = IMessageManager.Stub.asInterface(service) as IMessageManager.Stub?
             if (mProcessCallback == null) {
                 mProcessCallback = object : IClientListener.Stub() {
-
                     override fun notifyDataChanged(message: EventMessage?) {
-                        TODO("根据参数，把message解析成特定类型，发送给channel")
-                        //channelList[message.]?.notifyObserver(data)
+                        //("根据参数，把message解析成特定类型，发送给客户端channel")
+                        if (message != null) {
+                            channelList[message.channel]?.notifyObserver2(message)
+                        }
                     }
 
                     override fun getLocateFrom(): String {
-                        TODO("Not yet implemented")
+                       return currentProcessName
                     }
 
                 }

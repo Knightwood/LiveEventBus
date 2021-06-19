@@ -1,18 +1,20 @@
 package com.kiylx.bus.eventbus.ipc.binder.services
 
+import com.google.gson.reflect.TypeToken
 import com.kiylx.bus.eventbus.IClientListener
 import com.kiylx.bus.eventbus.core.Channel
 import com.kiylx.bus.eventbus.core.MainBusManager
 import com.kiylx.bus.eventbus.core.OstensibleObserver
-import com.kiylx.bus.eventbus.ipc.binder.generateMessage
-import com.kiylx.bus.eventbus.ipc.binder.generateMsgFromString
+import com.kiylx.bus.eventbus.core.interfaces.Mode
 import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
 import com.kiylx.bus.eventbus.ipc.binder.model.ConnectResult
 import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
 import com.kiylx.bus.eventbus.ipc.binder.model.ResultCode
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 
-class ProcessManager private constructor() {
+
+class CommunicationManager private constructor() {
+    //<locateFrom,ProcessWrapper>  locateFrom:来自哪个进程,客户端进程的名称
     private val locateProcessList: MutableMap<String, ProcessWrapper> by lazy { mutableMapOf() }
     private var mainBusManager: MainBusManager? = null
 
@@ -43,7 +45,7 @@ class ProcessManager private constructor() {
     fun dispatchMsgToChannel(message: EventMessage?) {
         message?.run {
             val channelName = channel
-            mainBusManager?.getChannel2(channelName)?.post(generateMsgFromString(json))
+            mainBusManager?.getChannel2(channelName)?.postJson(json, )
         }
     }
 
@@ -68,12 +70,12 @@ class ProcessManager private constructor() {
                 val locateWrapper = locateProcessList[locateFrom]
                 val tmp = object : OstensibleObserver<Any>() {
                     override fun onChanged(t: Any) {
-                        locateWrapper?.client?.notifyDataChanged(generateMessage(connectInfo, t))
+                        locateWrapper?.client?.notifyDataChanged(EventMessage(  " ", " ", t.toString()))
                     }
-                }
-                locateWrapper?.addObserver(channelName, tmp)
-
+                }.config().setCrossProcess(mode= Mode.binder).build()
                 channel.observeForever(ostensibleObserver = tmp)
+
+                locateWrapper?.addObserver(channelName, tmp)
                 ConnectResult(ResultCode.success)
             } else {
                 ConnectResult(ResultCode.channelNotFound)
@@ -87,7 +89,7 @@ class ProcessManager private constructor() {
             val channelName: String = channelName
             val channel: Channel<Any>? = mainBusManager?.getChannel2(channelName)
             if (channel != null) {
-                return EventMessage(" ", " ", " ", " ", " ", channel.convertToJson())
+                return EventMessage(" ",    " ", channel.dataConvertToJson())
             }
         }
         return EventMessage()
@@ -100,7 +102,7 @@ class ProcessManager private constructor() {
 
     companion object {
         @JvmStatic
-        val instance: ProcessManager by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { ProcessManager() }
+        val instance: CommunicationManager by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CommunicationManager() }
 
     }
 }

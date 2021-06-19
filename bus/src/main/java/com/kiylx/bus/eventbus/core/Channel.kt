@@ -10,6 +10,7 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flowOn
+import java.lang.reflect.Type
 import java.util.*
 
 
@@ -37,6 +38,9 @@ public open class Channel<T>(val channelName: String) : BaseChannel(), Action<T>
     //以下是发送
     @ObsoleteCoroutinesApi
     override fun post(value: T) = postToInBox(value, 0L, null)
+
+    @ObsoleteCoroutinesApi
+    fun postJson(json: String,clazz: Class<T>) = postToInBox(jsonConvertToObject(json,clazz), 0L, null)
 
     @ObsoleteCoroutinesApi
     override fun postDelay(value: T, delay: Long) = postToInBox(value, delay, null)
@@ -98,7 +102,6 @@ public open class Channel<T>(val channelName: String) : BaseChannel(), Action<T>
      * @param delay
      * @param owner 数据发送方
      */
-
     @ObsoleteCoroutinesApi
     private fun postToInBox(message: T, delay: Long, owner: LifecycleOwner? = null) {
         //Log.d(TAG, "postToInBox: 发送消息")
@@ -191,9 +194,15 @@ public open class Channel<T>(val channelName: String) : BaseChannel(), Action<T>
         return inBox.value
     }
 
-    fun convertToJson(): String {
-        // TODO: 2021/6/19
+
+    fun dataConvertToJson(): String {
+       return MainBusManager.instance.gson.toJson(inBox.value)
     }
+
+    fun jsonConvertToObject(json: String,typeOfSrc: Type): T {
+        return MainBusManager.instance.gson.fromJson(json,typeOfSrc)
+    }
+
 
     fun config(): Config {
         return config
@@ -209,10 +218,10 @@ public open class Channel<T>(val channelName: String) : BaseChannel(), Action<T>
             return this
         }
 
-       /* fun setIsUseCrossProcess(mode: Mode): Config {
-            crossProcess = mode
-            return this
-        }*/
+        /* fun setIsUseCrossProcess(mode: Mode): Config {
+             crossProcess = mode
+             return this
+         }*/
 
         fun build(): Channel<T> {
             return this@Channel

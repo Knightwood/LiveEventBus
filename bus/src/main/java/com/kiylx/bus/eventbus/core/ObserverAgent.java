@@ -84,21 +84,36 @@ class ObserverAgent<T> {
             realObserver = new Observer<T>() {
                 @Override
                 public void onChanged(T t) {
-                    if (ostensibleObserver.config().isWantAcceptMessage()) {
-                        if (ostensibleObserver.config().isSticky() && observerLastVersion == START_VERSION)
-                            ostensibleObserver.onChanged(t);
-                        else {
-                            //非粘性下，拦截推送给新创建的observer的消息
-                            if (mVersion == START_VERSION && observerLastVersion == START_VERSION)
+                    switch (ostensibleObserver.config().getCrossProcess()){
+                        case normal:
+                            if (ostensibleObserver.config().isWantAcceptMessage()) {
+                            if (ostensibleObserver.config().isSticky() && observerLastVersion == START_VERSION)
                                 ostensibleObserver.onChanged(t);
+                            else {
+                                //非粘性下，拦截推送给新创建的observer的消息
+                                if (mVersion == START_VERSION && observerLastVersion == START_VERSION)
+                                    ostensibleObserver.onChanged(t);
+                            }
+                            observerLastVersion = mVersion;
                         }
-                        observerLastVersion = mVersion;
+                            break;
+                        case broadcast:
+                            break;
+                        case binder:
+                           ostensibleObserver.onChanged(convertToJson(t));
+                           observerLastVersion = mVersion;
+                            break;
                     }
+
                 }
             };
 
         }
         return this;
+    }
+
+    private T convertToJson(T t) {
+        return null;
     }
 
 }

@@ -1,13 +1,15 @@
 package com.kiylx.bus.eventbus.ipc.binder
 
+import android.app.ActivityManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Process
 import android.text.TextUtils
-import com.kiylx.bus.eventbus.ipc.binder.services.MessageService
 import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
-import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
+import com.kiylx.bus.eventbus.ipc.binder.services.MessageService
 import com.kiylx.bus.eventbus.utils.Logs
+
 
 fun getServiceName(channelConnectInfo: ChannelConnectInfo): String {
     return channelConnectInfo.pkgName + channelConnectInfo.clsName
@@ -40,18 +42,14 @@ fun getServiceName(context: Context): String? {
     return mPkgName
 }
 
-fun generateMessage(connectInfo: ChannelConnectInfo, t: Any): EventMessage? {
-    TODO("Not yet implemented")
-}
-
-fun <T> generateMessage(t: T): EventMessage? {
-    TODO("Not yet implemented")
-}
-
-fun parseMessage(message: EventMessage?): Any {
-    TODO("Not yet implemented")
-}
-
-fun generateMsgFromString(json: String?): Any {
-    TODO("Not yet implemented")
+fun getProcessName(cxt: Context): String {
+    val pid = Process.myPid()
+    val am = cxt.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val runningApps = am.runningAppProcesses ?: return "null"
+    for (procInfo in runningApps) {
+        if (procInfo.pid == pid) {
+            return procInfo.processName
+        }
+    }
+    return "null"
 }

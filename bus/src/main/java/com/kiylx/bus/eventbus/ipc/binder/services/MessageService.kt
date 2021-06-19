@@ -26,46 +26,46 @@ import com.kiylx.bus.eventbus.ipc.binder.model.ConnectResult
  */
 
 class MessageService() : Service() {
-    private var mProcessManager:ProcessManager= ProcessManager.instance
+    private var mCommunicationManager:CommunicationManager= CommunicationManager.instance
 
     private var mBinder = object : IMessageManager.Stub() {
         override fun registerListener(listener: IClientListener?) {
             if (listener != null) {
-                mProcessManager.registerLocate(listener)
+                mCommunicationManager.registerLocate(listener)
             }
         }
 
         override fun unregisterListener(listener: IClientListener?) {
             if (listener != null)
-                mProcessManager.unregisterLocate(listener)
+                mCommunicationManager.unregisterLocate(listener)
         }
 
         /**
          * 发送数据到服务端
          */
         override fun sendMessage(message: EventMessage?) {
-            mProcessManager.dispatchMsgToChannel(message)
+            mCommunicationManager.dispatchMsgToChannel(message)
         }
 
         /**
          * 删除服务端的一个observer
          */
         override fun deleteObserver(connectInfo: ChannelConnectInfo?) {
-            mProcessManager.unListenChannel(connectInfo)
+            mCommunicationManager.unListenChannel(connectInfo)
         }
 
         /**
          * 添加一个监听某个channel的observer到服务端
          */
         override fun requestConnect(connectInfo: ChannelConnectInfo?): ConnectResult {
-          return  mProcessManager.listenChannel(connectInfo)
+          return  mCommunicationManager.listenChannel(connectInfo)
         }
 
         /**
          * 从服务端的某个channel中拿一次数据
          */
         override fun getMessageOnces(connectInfo: ChannelConnectInfo?): EventMessage {
-           return mProcessManager.getMessage(connectInfo)
+           return mCommunicationManager.getMessage(connectInfo)
         }
 
     }
@@ -77,7 +77,7 @@ class MessageService() : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-       mProcessManager.destroy()
+       mCommunicationManager.destroy()
     }
 
     override fun onBind(intent: Intent): IBinder {
