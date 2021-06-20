@@ -18,12 +18,12 @@ import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
  * @param channelLifeCycle 默认可以不传。
  * 控制channel的生命周期
  */
-fun <T> with(channelName: String, channelLifeCycle: LifecycleOwner? = null): Channel<T> {
-    return MainBusManager.instance.getChannel<T>(channelName, channelLifeCycle)
+inline fun <reified T : Any> with(channelName: String, channelLifeCycle: LifecycleOwner? = null): Channel<T> {
+    return MainBusManager.instance.getChannel<T>(channelName, channelLifeCycle, T::class.java)
 }
 
-fun <T> withCrossProcess(context: Context, channelConnectInfo: ChannelConnectInfo): CrossChannel<T>? {
-    return CrossProcessBusManager.instance.getChannel<T>(context, channelConnectInfo)
+inline fun <reified T : Any> withCrossProcess(context: Context, channelConnectInfo: ChannelConnectInfo): CrossChannel<T>? {
+    return CrossProcessBusManager.instance.getChannel<T>(context, channelConnectInfo, T::class.java)
 }
 
 /*fun withCrossProcess(): BoardCastChannel {

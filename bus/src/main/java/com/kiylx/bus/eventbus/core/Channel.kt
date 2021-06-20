@@ -2,8 +2,10 @@ package com.kiylx.bus.eventbus.core
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import com.google.gson.reflect.TypeToken
 import com.kiylx.bus.eventbus.core.interfaces.Action
 import com.kiylx.bus.eventbus.core.interfaces.BaseChannel
+import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
 import com.kiylx.bus.eventbus.utils.Utils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.actor
@@ -21,7 +23,7 @@ import java.util.*
  * 描述：推送事件由通道实现.
  * T : 消息类
  */
-public open class Channel<T>(val channelName: String) : BaseChannel(), Action<T> {
+public open class Channel<T : Any>(val channelName: String, val clazz: Class<T>) : BaseChannel(), Action<T> {
     private val config: Config by lazy { Config() }
     private val inBox = LiveDataMod<T>()//存放消息的信箱
 
@@ -40,7 +42,7 @@ public open class Channel<T>(val channelName: String) : BaseChannel(), Action<T>
     override fun post(value: T) = postToInBox(value, 0L, null)
 
     @ObsoleteCoroutinesApi
-    fun postJson(json: String,clazz: Class<T>) = postToInBox(jsonConvertToObject(json,clazz), 0L, null)
+    fun postJson(json: String) = postToInBox(jsonConvertToObject(json), 0L, null)
 
     @ObsoleteCoroutinesApi
     override fun postDelay(value: T, delay: Long) = postToInBox(value, delay, null)
@@ -196,11 +198,11 @@ public open class Channel<T>(val channelName: String) : BaseChannel(), Action<T>
 
 
     fun dataConvertToJson(): String {
-       return MainBusManager.instance.gson.toJson(inBox.value)
+        return MainBusManager.instance.gson.toJson(inBox.value)
     }
 
-    fun jsonConvertToObject(json: String,typeOfSrc: Type): T {
-        return MainBusManager.instance.gson.fromJson(json,typeOfSrc)
+    fun jsonConvertToObject(json: String): T {
+        return MainBusManager.instance.gson.fromJson(json, clazz)
     }
 
 

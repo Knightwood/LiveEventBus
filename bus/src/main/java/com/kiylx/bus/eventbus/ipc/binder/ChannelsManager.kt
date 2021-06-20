@@ -23,7 +23,7 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
         private set
 
     //存储着所有消息通道，不同消息通道可能会连接不同的服务端<channelName,crossChannel>
-    private val channelList: MutableMap<String, CrossChannel<Any?>> by lazy { mutableMapOf() }
+    private val channelList: MutableMap<String, CrossChannel<*>> by lazy { mutableMapOf() }
     private var mContext: Context? = context
 
     var mProcessManager: IMessageManager.Stub? = null
@@ -76,11 +76,11 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
         unbindService()
     }
 
-    fun <T> getChannel(channelInfo: ChannelConnectInfo): CrossChannel<T>? {
+    fun <T : Any> getChannel(channelInfo: ChannelConnectInfo, clazz: Class<T>): CrossChannel<T>? {
         synchronized(channelList) {
-            var channel: CrossChannel<Any?>? = channelList.getValue(channelInfo.channelName)
-            if (channel == null) {
-                channel = CrossChannel(this@ChannelsManager, channelInfo)
+            var channel: CrossChannel<T>? = null
+            if (!channelList.containsKey(channelInfo.channelName)) {
+                channel = CrossChannel(this@ChannelsManager, channelInfo, clazz)
                 // 2021/6/16 与service建立连接并获取消息,并验证service端对应本地的channel是否存在
                 var connect: ConnectResult? = mProcessManager?.requestConnect(channelInfo)
                 if (connect == null || connect.code != ResultCode.success) {

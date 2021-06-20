@@ -14,7 +14,7 @@ import java.util.*
  * 同一个channel中存储着所有关注同一个远程消息发布者(同一种消息或数据)的观察者。
  * 一个channel监听同一种消息或者说数据
  */
-class CrossChannel<T>(channelsManagerAction: ChannelsManagerAction, channelInfo: ChannelConnectInfo) : BaseChannel(), ChannelAction {
+class CrossChannel<T : Any>(channelsManagerAction: ChannelsManagerAction, channelInfo: ChannelConnectInfo, val clazz: Class<T>) : BaseChannel(), ChannelAction {
     val tag = "跨进程Channel"
     private var connectInfo: ChannelConnectInfo = channelInfo //连接信息，连接到哪个服务
     private var observersMap: MutableMap<UUID, ObserverWrapper<*>> = mutableMapOf()//观察同一个消息源的观察者集合
@@ -38,7 +38,7 @@ class CrossChannel<T>(channelsManagerAction: ChannelsManagerAction, channelInfo:
     /**
      * 向服务端发送数据
      */
-    fun <T> sendToRemote(data: T) {
+    fun sendToRemote(data: T) {
         mChannelsManagerAction?.send(generateMessage(data))
     }
 
@@ -93,12 +93,15 @@ class CrossChannel<T>(channelsManagerAction: ChannelsManagerAction, channelInfo:
         }
     }
 
-    fun <T> generateMessage(t: T): EventMessage? {
-        TODO("Not yet implemented")
+    fun generateMessage(t: T): EventMessage {
+        return EventMessage(connectInfo.channelName, " ", CrossProcessBusManager.instance.gson.toJson(t))
     }
 
-    fun<T> convertJson(json: EventMessage?): T {
-        TODO("Not yet implemented")
+    fun convertJson(json: EventMessage?): T? {
+        if (json != null) {
+            return CrossProcessBusManager.instance.gson.fromJson(json.json, clazz)
+        }
+        return null
     }
 
     private val config: Config by lazy { Config() }

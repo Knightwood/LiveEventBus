@@ -13,9 +13,9 @@ import java.util.*
  * packageName：com.crystal.aplayer.module_base.tools.databus
  * 描述：存储消息通道，分发消息通道，全局配置调整.manager
  */
-class MainBusManager private constructor() :BaseBusManager,LifecycleOwner {
+class MainBusManager private constructor() : BaseBusManager, LifecycleOwner {
     private val mChannels //存放消息通道. Map<channelName,Channel<Object>>
-            : MutableMap<String?, Channel<Any>>
+            : MutableMap<String?, Channel<*>>
     private val config //配置项
             : Config
     private var lifecycleObserverAlwaysActive: Boolean
@@ -24,7 +24,9 @@ class MainBusManager private constructor() :BaseBusManager,LifecycleOwner {
     override fun getLifecycle(): Lifecycle {
         return lifecycleRegistry
     }
-val gson:Gson by    lazy { Gson() }
+
+    val gson: Gson by lazy { Gson() }
+
     /**
      * @param <T>    消息通道的泛型类
      * @param target 消息通道名称
@@ -32,9 +34,9 @@ val gson:Gson by    lazy { Gson() }
      * 控制消息通道的生命周期。null时，消息通道默认的生命周期是BusCore控制
      * @return 返回消息通道
     </T> */
-    fun <T> getChannel(target: String, lifecycleOwner: LifecycleOwner?=null): Channel<T> {
+    fun <T : Any> getChannel(target: String, lifecycleOwner: LifecycleOwner? = null, clazz: Class<T>): Channel<T> {
         if (!mChannels.containsKey(target)) {
-            val channel = Channel<Any>(target)
+            val channel = Channel<T>(target, clazz = clazz)
             if (lifecycleOwner == null)
                 lifecycleRegistry.addObserver(channel)
             else
@@ -44,15 +46,9 @@ val gson:Gson by    lazy { Gson() }
         return mChannels[target] as Channel<T>
     }
 
-    fun getChannel2(target: String, lifecycleOwner: LifecycleOwner?=null): Channel<Any>? {
+    fun getChannel2(target: String, lifecycleOwner: LifecycleOwner? = null): Channel<Any>? {
         if (!mChannels.containsKey(target)) {
-           /* val channel = Channel<Any>(target)
-            if (lifecycleOwner == null)
-                lifecycleRegistry.addObserver(channel)
-            else
-                lifecycleOwner.lifecycle.addObserver(channel)
-            mChannels[target] = channel*/
-        return null
+            return null
         }
         return mChannels[target] as Channel<Any>
     }
@@ -62,7 +58,7 @@ val gson:Gson by    lazy { Gson() }
      * @param <T>
      * @return
     </T> */
-    fun <T> getAfter(uuid: UUID?): Channel<T>? {
+    fun <T : Any> getAfter(uuid: UUID?): Channel<T>? {
         for (c in mChannels.values) {
             if (c.uuid.compareTo(uuid) == 0) {
                 return c as Channel<T>
@@ -71,7 +67,7 @@ val gson:Gson by    lazy { Gson() }
         return null
     }
 
-    fun <T> getAfter(target: String, uuid: UUID?): Channel<T>? {
+    fun <T : Any> getAfter(target: String, uuid: UUID?): Channel<T>? {
         for (c in mChannels.values) {
             if (c.uuid.compareTo(uuid) == 0 && c.channelName == target) {
                 return c as Channel<T>
@@ -86,6 +82,7 @@ val gson:Gson by    lazy { Gson() }
     fun destroy() {
         lifecycleRegistry.markState(Lifecycle.State.DESTROYED)
     }
+
     fun config(): Config {
         return config
     }

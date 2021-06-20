@@ -1,6 +1,5 @@
 package com.kiylx.bus.eventbus.ipc.binder.services
 
-import com.google.gson.reflect.TypeToken
 import com.kiylx.bus.eventbus.IClientListener
 import com.kiylx.bus.eventbus.core.Channel
 import com.kiylx.bus.eventbus.core.MainBusManager
@@ -45,7 +44,7 @@ class CommunicationManager private constructor() {
     fun dispatchMsgToChannel(message: EventMessage?) {
         message?.run {
             val channelName = channel
-            mainBusManager?.getChannel2(channelName)?.postJson(json, )
+            mainBusManager?.getChannel2(channelName)?.postJson(json)
         }
     }
 

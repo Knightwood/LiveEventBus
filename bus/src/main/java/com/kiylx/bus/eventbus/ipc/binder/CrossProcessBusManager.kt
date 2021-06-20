@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import com.google.gson.Gson
 import com.kiylx.bus.eventbus.core.interfaces.BaseBusManager
 import com.kiylx.bus.eventbus.ipc.binder.interfaces.CrossProcessBusManagerAction
 import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
@@ -21,6 +22,7 @@ class CrossProcessBusManager private constructor() : BaseBusManager, LifecycleOw
     private val lifecycleRegistry: LifecycleRegistry
     private val channelsManagerMap: MutableMap<String, ChannelsManager> by lazy { mutableMapOf() }//<service全名,channelsManager>
     private val mContext: Context? = null
+    val gson: Gson by lazy { Gson() }
 
     /**
      * 根据connectInfo查找ChannelsManager,ChannelsManager不存在就创建并初始化,并通过ChannelsManager获得channel。
@@ -28,16 +30,16 @@ class CrossProcessBusManager private constructor() : BaseBusManager, LifecycleOw
      *
      * 查找channel,channel不存在，生成实例。channel存在，返回它
      */
-    fun <T> getChannel(context: Context, connectInfo: ChannelConnectInfo): CrossChannel<T>? {
+    fun <T : Any> getChannel(context: Context, connectInfo: ChannelConnectInfo, clazz: Class<T>): CrossChannel<T>? {
         val serviceName = (connectInfo.pkgName + connectInfo.clsName)
         //ChannelsManager存在，获得channel。不存在，new出来初始化并获得channel
         return if (channelsManagerMap.containsKey(serviceName))
-            channelsManagerMap[serviceName]?.getChannel<T>(connectInfo)
+            channelsManagerMap[serviceName]?.getChannel<T>(connectInfo, clazz)
         else {
             val channelsManager = ChannelsManager(context, this@CrossProcessBusManager)
             channelsManager.initManager(context, connectInfo)
             channelsManagerMap[serviceName] = channelsManager
-            channelsManager.getChannel(channelInfo = connectInfo)
+            channelsManager.getChannel(channelInfo = connectInfo, clazz)
         }
     }
 

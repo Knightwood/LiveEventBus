@@ -9,7 +9,7 @@ import android.os.Parcelable;
 public class EventMessage implements Parcelable {
     // 事件属于哪个channel
     public String channel;
-    // 发送的事件类型
+    // 发送的事件类型 （ps：该字段没用上）
     public String type;
     // 发送的事件值的JSON串
     public String json;
