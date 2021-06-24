@@ -21,7 +21,7 @@ class ChannelX<T : Any>(val channelName: String,
                         val clazz: Class<T>) : Cornerstone(), Action<T> {
     private val channelConfigs: ChannelConfigs by lazy { ChannelConfigs() }
     private val inBox = LiveDataMod<T>()//存放消息的信箱
-    private var mesSender: Channel<T> = Channel<T>(20)
+    private var mesSender: Channel<T> = Channel<T>(channelConfigs.mSenderCapacity)
 
     init {
         launch(coroutineContext) {
@@ -45,9 +45,7 @@ class ChannelX<T : Any>(val channelName: String,
         }
     }
 
-
     override fun postDelay(value: T, delay: Long) = postInBox(value, delay, null)
-
 
     override fun postDelay(sender: LifecycleOwner, value: T, delay: Long) =
             postInBox(value, delay, sender)
@@ -226,6 +224,12 @@ class ChannelX<T : Any>(val channelName: String,
         //可配置项
         private var isCanPush = true //通道是否可以发送消息
         var allowRemoteListen = true//通道是否允许被远程监听
+        var mSenderCapacity: Int = 20//通道容许的缓冲值
+
+        fun setCapacity(limit:Int): ChannelConfigs {
+            this.mSenderCapacity=limit
+            return this
+        }
 
         fun setCanPushMes(b: Boolean): ChannelConfigs {
             isCanPush = b
