@@ -14,8 +14,8 @@ import java.util.*
  * 描述：存储消息通道，分发消息通道，全局配置调整.manager
  */
 class MainBusManager private constructor() : BaseBusManager, LifecycleOwner {
-    private val mChannels //存放消息通道. Map<channelName,Channel<Object>>
-            : MutableMap<String?, Channel<*>>
+    private val mChannels //存放消息通道. Map<channelName,ChannelX<Object>>
+            : MutableMap<String, ChannelX<*>>
     private val config //配置项
             : Config
     private var lifecycleObserverAlwaysActive: Boolean
@@ -34,23 +34,28 @@ class MainBusManager private constructor() : BaseBusManager, LifecycleOwner {
      * 控制消息通道的生命周期。null时，消息通道默认的生命周期是BusCore控制
      * @return 返回消息通道
     </T> */
-    fun <T : Any> getChannel(target: String, lifecycleOwner: LifecycleOwner? = null, clazz: Class<T>): Channel<T> {
+    fun <T : Any> getChannel(target: String, lifecycleOwner: LifecycleOwner? = null, clazz: Class<T>): ChannelX<T> {
         if (!mChannels.containsKey(target)) {
-            val channel = Channel<T>(target, clazz = clazz)
+            val channel = ChannelX<T>(target, clazz = clazz)
             if (lifecycleOwner == null)
                 lifecycleRegistry.addObserver(channel)
             else
                 lifecycleOwner.lifecycle.addObserver(channel)
             mChannels[target] = channel
         }
-        return mChannels[target] as Channel<T>
+        return mChannels[target] as ChannelX<T>
     }
 
-    fun getChannel2(target: String, lifecycleOwner: LifecycleOwner? = null): Channel<Any>? {
-        if (!mChannels.containsKey(target)) {
-            return null
+    fun getChannel2(target: String, lifecycleOwner: LifecycleOwner? = null): ChannelX<Any>? {
+        val ch = mChannels[target]
+        if (ch != null) {
+            return if (ch.config().allowRemoteListen) {
+                ch as ChannelX<Any>
+            } else {
+                null
+            }
         }
-        return mChannels[target] as Channel<Any>
+        return null
     }
 
     /**
@@ -58,19 +63,19 @@ class MainBusManager private constructor() : BaseBusManager, LifecycleOwner {
      * @param <T>
      * @return
     </T> */
-    fun <T : Any> getAfter(uuid: UUID?): Channel<T>? {
+    fun <T : Any> getAfter(uuid: UUID?): ChannelX<T>? {
         for (c in mChannels.values) {
             if (c.uuid.compareTo(uuid) == 0) {
-                return c as Channel<T>
+                return c as ChannelX<T>
             }
         }
         return null
     }
 
-    fun <T : Any> getAfter(target: String, uuid: UUID?): Channel<T>? {
+    fun <T : Any> getAfter(target: String, uuid: UUID?): ChannelX<T>? {
         for (c in mChannels.values) {
             if (c.uuid.compareTo(uuid) == 0 && c.channelName == target) {
-                return c as Channel<T>
+                return c as ChannelX<T>
             }
         }
         return null

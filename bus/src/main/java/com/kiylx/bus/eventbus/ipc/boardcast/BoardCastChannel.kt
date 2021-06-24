@@ -1,9 +1,9 @@
 package com.kiylx.bus.eventbus.ipc.boardcast
 
-import com.kiylx.bus.eventbus.core.interfaces.BaseChannel
+import com.kiylx.bus.eventbus.core.interfaces.Cornerstone
 import com.kiylx.bus.eventbus.core.interfaces.Mode
 
-class BoardCastChannel private constructor() : BaseChannel() {
+class BoardCastChannel private constructor() : Cornerstone() {
 
 
     private val config: Config by lazy { Config() }
@@ -12,7 +12,7 @@ class BoardCastChannel private constructor() : BaseChannel() {
         return config
     }
 
-    inner class Config{
+    inner class Config {
         //可配置项
         private var isCanPush = true //通道是否可以发送消息
         private var crossProcess = Mode.normal

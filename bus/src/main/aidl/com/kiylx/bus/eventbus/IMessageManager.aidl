@@ -13,5 +13,5 @@ interface IMessageManager {
     void sendMessage(in EventMessage message);
     void deleteObserver(in ChannelConnectInfo connectInfo);
     ConnectResult requestConnect(in ChannelConnectInfo connectInfo);
-    EventMessage getMessageOnces(in ChannelConnectInfo connectInfo);
+    void getMessageOnces(in ChannelConnectInfo connectInfo);
 }

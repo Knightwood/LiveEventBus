@@ -3,7 +3,7 @@ package com.kiylx.bus.eventbus.utils
 import android.content.Context
 import androidx.lifecycle.LifecycleOwner
 import com.kiylx.bus.eventbus.core.MainBusManager
-import com.kiylx.bus.eventbus.core.Channel
+import com.kiylx.bus.eventbus.core.ChannelX
 import com.kiylx.bus.eventbus.ipc.binder.CrossProcessBusManager
 import com.kiylx.bus.eventbus.ipc.binder.CrossChannel
 import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
@@ -18,7 +18,7 @@ import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
  * @param channelLifeCycle 默认可以不传。
  * 控制channel的生命周期
  */
-inline fun <reified T : Any> with(channelName: String, channelLifeCycle: LifecycleOwner? = null): Channel<T> {
+inline fun <reified T : Any> with(channelName: String, channelLifeCycle: LifecycleOwner? = null): ChannelX<T> {
     return MainBusManager.instance.getChannel<T>(channelName, channelLifeCycle, T::class.java)
 }
 

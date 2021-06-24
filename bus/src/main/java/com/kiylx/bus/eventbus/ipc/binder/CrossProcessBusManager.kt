@@ -34,7 +34,7 @@ class CrossProcessBusManager private constructor() : BaseBusManager, LifecycleOw
         val serviceName = (connectInfo.pkgName + connectInfo.clsName)
         //ChannelsManager存在，获得channel。不存在，new出来初始化并获得channel
         return if (channelsManagerMap.containsKey(serviceName))
-            channelsManagerMap[serviceName]?.getChannel<T>(connectInfo, clazz)
+            channelsManagerMap[serviceName]?.getChannel<T>(channelInfo = connectInfo, clazz)
         else {
             val channelsManager = ChannelsManager(context, this@CrossProcessBusManager)
             channelsManager.initManager(context, connectInfo)

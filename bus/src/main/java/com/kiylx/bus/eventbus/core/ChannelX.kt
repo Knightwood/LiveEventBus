@@ -2,17 +2,11 @@ package com.kiylx.bus.eventbus.core
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import com.google.gson.reflect.TypeToken
 import com.kiylx.bus.eventbus.core.interfaces.Action
-import com.kiylx.bus.eventbus.core.interfaces.BaseChannel
-import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
+import com.kiylx.bus.eventbus.core.interfaces.Cornerstone
 import com.kiylx.bus.eventbus.utils.Utils
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.flowOn
-import java.lang.reflect.Type
+import kotlinx.coroutines.channels.Channel
 import java.util.*
 
 
@@ -23,33 +17,40 @@ import java.util.*
  * 描述：推送事件由通道实现.
  * T : 消息类
  */
-public open class Channel<T : Any>(val channelName: String, val clazz: Class<T>) : BaseChannel(), Action<T> {
-    private val config: Config by lazy { Config() }
+class ChannelX<T : Any>(val channelName: String,
+                        val clazz: Class<T>) : Cornerstone(), Action<T> {
+    private val channelConfigs: ChannelConfigs by lazy { ChannelConfigs() }
     private val inBox = LiveDataMod<T>()//存放消息的信箱
+    private var mesSender: Channel<T> = Channel<T>(20)
 
-    @ObsoleteCoroutinesApi
-    private var mesSender = actor<T> {
-        //Log.d(TAG, "kotlin的channel接到消息: ")
-        this.consumeAsFlow()
-                .flowOn(Dispatchers.Main).collect {
-                    //Log.d(TAG, "flow分发消息")
-                    inBox.value = it
-                }
+    init {
+        launch(coroutineContext) {
+            while (true) {
+                val data = mesSender.receive()
+                //Log.d(TAG, "flow分发消息")
+                inBox.value = data
+            }
+        }
     }
 
+
     //以下是发送
-    @ObsoleteCoroutinesApi
-    override fun post(value: T) = postToInBox(value, 0L, null)
 
-    @ObsoleteCoroutinesApi
-    fun postJson(json: String) = postToInBox(jsonConvertToObject(json), 0L, null)
+    override fun post(value: T) = postInBox(value, 0L, null)
 
-    @ObsoleteCoroutinesApi
-    override fun postDelay(value: T, delay: Long) = postToInBox(value, delay, null)
+    fun postJson(json: String) {
+        launch(coroutineContext) {
+            val data = jsonConvertToObject(json)
+            postInBox2(data)
+        }
+    }
 
-    @ObsoleteCoroutinesApi
+
+    override fun postDelay(value: T, delay: Long) = postInBox(value, delay, null)
+
+
     override fun postDelay(sender: LifecycleOwner, value: T, delay: Long) =
-            postToInBox(value, delay, sender)
+            postInBox(value, delay, sender)
 
     //以下是监听
     override fun observe(owner: LifecycleOwner, ostensibleObserver: OstensibleObserver<T>) {
@@ -104,10 +105,9 @@ public open class Channel<T : Any>(val channelName: String, val clazz: Class<T>)
      * @param delay
      * @param owner 数据发送方
      */
-    @ObsoleteCoroutinesApi
-    private fun postToInBox(message: T, delay: Long, owner: LifecycleOwner? = null) {
+    private fun postInBox(message: T, delay: Long, owner: LifecycleOwner? = null) {
         //Log.d(TAG, "postToInBox: 发送消息")
-        CoroutineScope(coroutineContext).launch {
+        launch(coroutineContext) {
             if (delay > 1L)
                 delay(delay)
             //带生命周期的发送消息的时候sender处于非激活状态时，消息取消发送
@@ -120,6 +120,18 @@ public open class Channel<T : Any>(val channelName: String, val clazz: Class<T>)
                 mesSender.send(message)
             }
 
+        }
+    }
+
+    private suspend fun postInBox2(message: T, owner: LifecycleOwner? = null) {
+        //带生命周期的发送消息的时候sender处于非激活状态时，消息取消发送
+        if (owner != null) {
+            if (owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                mesSender.send(message)
+            }
+        } else {
+            //不带有生命周期
+            mesSender.send(message)
         }
     }
 
@@ -197,36 +209,36 @@ public open class Channel<T : Any>(val channelName: String, val clazz: Class<T>)
     }
 
 
-    fun dataConvertToJson(): String {
-        return MainBusManager.instance.gson.toJson(inBox.value)
+    suspend fun dataConvertToJson(): String = withContext(Dispatchers.Default) {
+        MainBusManager.instance.gson.toJson(inBox.value)
     }
 
-    fun jsonConvertToObject(json: String): T {
-        return MainBusManager.instance.gson.fromJson(json, clazz)
+    private suspend fun jsonConvertToObject(json: String): T = withContext(Dispatchers.Default) {
+        MainBusManager.instance.gson.fromJson(json, clazz)
     }
 
 
-    fun config(): Config {
-        return config
+    fun config(): ChannelConfigs {
+        return channelConfigs
     }
 
-    inner class Config {
+    inner class ChannelConfigs {
         //可配置项
         private var isCanPush = true //通道是否可以发送消息
-        //private var crossProcess = Mode.normal
+        var allowRemoteListen = true//通道是否允许被远程监听
 
-        fun setCanPushMes(b: Boolean): Config {
+        fun setCanPushMes(b: Boolean): ChannelConfigs {
             isCanPush = b
             return this
         }
 
-        /* fun setIsUseCrossProcess(mode: Mode): Config {
-             crossProcess = mode
-             return this
-         }*/
+        fun setAllowRemoteListen(b: Boolean): ChannelConfigs {
+            allowRemoteListen = b
+            return this
+        }
 
-        fun build(): Channel<T> {
-            return this@Channel
+        fun build(): ChannelX<T> {
+            return this@ChannelX
         }
     }
 

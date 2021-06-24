@@ -1,18 +1,21 @@
 package com.kiylx.bus.eventbus.ipc.binder.services
 
 import com.kiylx.bus.eventbus.IClientListener
-import com.kiylx.bus.eventbus.core.Channel
+import com.kiylx.bus.eventbus.core.ChannelX
 import com.kiylx.bus.eventbus.core.MainBusManager
 import com.kiylx.bus.eventbus.core.OstensibleObserver
+import com.kiylx.bus.eventbus.core.interfaces.Cornerstone
 import com.kiylx.bus.eventbus.core.interfaces.Mode
 import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
 import com.kiylx.bus.eventbus.ipc.binder.model.ConnectResult
 import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
 import com.kiylx.bus.eventbus.ipc.binder.model.ResultCode
-import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.*
 
-
-class CommunicationManager private constructor() {
+/**
+ * 服务端实现的方法在此类中得以实现，servcie将方法委托给此类。
+ */
+class CommunicationManager private constructor() : Cornerstone() {
     //<locateFrom,ProcessWrapper>  locateFrom:来自哪个进程,客户端进程的名称
     private val locateProcessList: MutableMap<String, ProcessWrapper> by lazy { mutableMapOf() }
     private var mainBusManager: MainBusManager? = null
@@ -52,29 +55,37 @@ class CommunicationManager private constructor() {
     fun unListenChannel(connectInfo: ChannelConnectInfo?) {
         connectInfo?.run {
             val channelName: String = channelName
-            val channel: Channel<Any>? = mainBusManager?.getChannel2(channelName)
-            if (channel != null) {
+            val channelX: ChannelX<Any>? = mainBusManager?.getChannel2(channelName)
+            if (channelX != null) {
                 val locateWrapper = locateProcessList[locateFrom]
-                locateWrapper?.getObserver(channelName)?.let { channel.removeObserver(it) }
-                locateWrapper?.removeObserver(channelName)
+                locateWrapper?.findLocalObserver(channelName)?.let { channelX.removeObserver(it) }
+                locateWrapper?.deleteLocalObserver(channelName)
             }
         }
     }
 
+    /**
+     * 添加一个监听某个channel的observer到服务端
+     */
     fun listenChannel(connectInfo: ChannelConnectInfo?): ConnectResult {
         connectInfo?.run {
             val channelName: String = channelName
-            val channel: Channel<Any>? = mainBusManager?.getChannel2(channelName)
-            return if (channel != null) {
+            val channelX: ChannelX<Any>? = mainBusManager?.getChannel2(channelName)
+            return if (channelX != null) {
+                //客户端所需要的服务端channel存在
                 val locateWrapper = locateProcessList[locateFrom]
                 val tmp = object : OstensibleObserver<Any>() {
                     override fun onChanged(t: Any) {
-                        locateWrapper?.client?.notifyDataChanged(EventMessage(  " ", " ", t.toString()))
+                        locateWrapper?.client?.notifyDataChanged(EventMessage(" ", " ", t.toString()))
                     }
-                }.config().setCrossProcess(mode= Mode.binder).build()
-                channel.observeForever(ostensibleObserver = tmp)
+                }.config().setCrossProcess(mode = Mode.binder).build()
+                channelX.observeForever(ostensibleObserver = tmp)//添加监听
+                locateWrapper?.storeLocalObserver(channelName, tmp)
 
-                locateWrapper?.addObserver(channelName, tmp)
+                launch(coroutineContext) {
+                    tmp.onChanged(EventMessage(" ", " ", channelX.dataConvertToJson()))
+                }
+
                 ConnectResult(ResultCode.success)
             } else {
                 ConnectResult(ResultCode.channelNotFound)
@@ -83,21 +94,39 @@ class CommunicationManager private constructor() {
         return ConnectResult(ResultCode.connectFailed, "ChannelConnectInfo为null")
     }
 
-    fun getMessage(connectInfo: ChannelConnectInfo?): EventMessage {
-        connectInfo?.run {
-            val channelName: String = channelName
-            val channel: Channel<Any>? = mainBusManager?.getChannel2(channelName)
-            if (channel != null) {
-                return EventMessage(" ",    " ", channel.dataConvertToJson())
+    fun sendMesToClient(connectInfo: ChannelConnectInfo?) {
+        connectInfo?.let {
+            launch(coroutineContext) {
+                val message = getMessage(it)
+                val processWrapper = locateProcessList[it.locateFrom]
+                processWrapper?.client?.notifyDataChanged(message)
             }
         }
-        return EventMessage()
     }
 
-    fun destroy() {
+    /**
+     * 从服务端特定channel中拿取最新消息
+     */
+    suspend fun getMessage(connectInfo: ChannelConnectInfo?): EventMessage {
+        var data: EventMessage
+        if (connectInfo == null) {
+            data = EventMessage()
+        } else {
+            val channelName: String = connectInfo.channelName
+            val channelX: ChannelX<Any>? = mainBusManager?.getChannel2(channelName)
+            if (channelX != null) {
+                data = EventMessage(channelName, " ", channelX.dataConvertToJson())
+            } else {
+                data = EventMessage(channelName, "channel不存在", " ")
+            }
+        }
+        return data
+    }
+
+    override fun clear() {
+        super.clear()
         mainBusManager = null
     }
-
 
     companion object {
         @JvmStatic
@@ -107,20 +136,23 @@ class CommunicationManager private constructor() {
 }
 
 /**
- *一个实例就代表服务端与一个客户端的连接，里面存储这个客户端对服务端channel监听的observer
+ *一个实例就代表服务端与一个客户端的连接，里面存储这个客户端对服务端的一个channel监听的observer
  */
 class ProcessWrapper(var client: IClientListener) {
     private val listenChannelsMap: MutableMap<String, OstensibleObserver<Any>> by lazy { mutableMapOf() }
 
-    fun getObserver(channelName: String): OstensibleObserver<Any>? {
+    fun findLocalObserver(channelName: String): OstensibleObserver<Any>? {
         return listenChannelsMap[channelName]
     }
 
-    fun addObserver(channelName: String, tmp: OstensibleObserver<Any>) {
+    /**
+     * 将本地observer存储起来
+     */
+    fun storeLocalObserver(channelName: String, tmp: OstensibleObserver<Any>) {
         listenChannelsMap[channelName] = tmp
     }
 
-    fun removeObserver(channelName: String) {
+    fun deleteLocalObserver(channelName: String) {
         listenChannelsMap.remove(channelName)
     }
 

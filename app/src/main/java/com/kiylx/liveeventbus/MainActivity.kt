@@ -17,17 +17,17 @@ class MainActivity : AppCompatActivity(),CoroutineScope {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val channel = LiveEventBus.with<String>("one")
-        val channel2 = LiveEventBus.with<String>("two")
+        val channel = LiveEventBus.with<String>("one", String::class.java)
+        val channel2 = LiveEventBus.with<String>("two", String::class.java)
 
         for (i in 0..9) {
             channel.post("ooo$i")
         }
 
         for (i in 10..20) {
-            channel2.postDelay("ppp$i",10L)
+            channel2.postDelay("ppp$i", 10L)
         }
-        LiveEventBus.with<String>("one").observe(this, object : OstensibleObserver<String?>() {
+        LiveEventBus.with<String>("one", String::class.java).observe(this, object : OstensibleObserver<String?>() {
             override fun onChanged(t: String?) {
                 Log.d(TAG, "onChanged1: $t")
             }
@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity(),CoroutineScope {
 
         launch(context = coroutineContext){
             delay(1000L)
-            LiveEventBus.with<String>("one").observeSticky( this@MainActivity, object : OstensibleObserver<String?>() {
+            LiveEventBus.with<String>("one", String::class.java).observeSticky(this@MainActivity, object : OstensibleObserver<String?>() {
                 override fun onChanged(t: String?) {
                     Log.d(TAG, "onChanged2: $t")
                 }
@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity(),CoroutineScope {
         }
 
         launch(Dispatchers.IO){
-            LiveEventBus.with<String>("two").observeSticky( this@MainActivity, object : OstensibleObserver<String?>() {
+            LiveEventBus.with<String>("two", String::class.java).observeSticky(this@MainActivity, object : OstensibleObserver<String?>() {
                 override fun onChanged(t: String?) {
                     Log.d(TAG, "onChanged3: $t")
                 }

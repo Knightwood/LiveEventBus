@@ -1,7 +1,12 @@
 package com.kiylx.bus.eventbus.utils;
 
+import android.content.Context;
+
 import com.kiylx.bus.eventbus.core.MainBusManager;
-import com.kiylx.bus.eventbus.core.Channel;
+import com.kiylx.bus.eventbus.core.ChannelX;
+import com.kiylx.bus.eventbus.ipc.binder.CrossChannel;
+import com.kiylx.bus.eventbus.ipc.binder.CrossProcessBusManager;
+import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo;
 
 /**
  * 创建者 kiylx
@@ -10,8 +15,11 @@ import com.kiylx.bus.eventbus.core.Channel;
  * 描述：
  */
 public class LiveEventBus {
-    public static <T> Channel<T> with(String channelName) {
-        return MainBusManager.getInstance().<T>getChannel(channelName,null);
+    public static <T> ChannelX<T> with(String channelName, Class<T> clazz) {
+        return MainBusManager.getInstance().<T>getChannel(channelName, null, clazz);
     }
 
+    public static <T> CrossChannel<T> withCrossProcess(Context context, ChannelConnectInfo channelConnectInfo, Class<T> clazz) {
+        return CrossProcessBusManager.getInstance().<T>getChannel(context, channelConnectInfo, clazz);
+    }
 }

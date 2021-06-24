@@ -12,15 +12,23 @@ import com.kiylx.bus.eventbus.ipc.binder.interfaces.ChannelsManagerAction
 import com.kiylx.bus.eventbus.ipc.binder.interfaces.CrossProcessBusManagerAction
 import com.kiylx.bus.eventbus.ipc.binder.model.*
 import com.kiylx.bus.eventbus.utils.Logs
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import java.util.*
+import kotlin.coroutines.CoroutineContext
 
 /**
  * 一个ChannelsManager连接到一个service,并管理着一堆channel，channel下有很多observers
  */
-class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossProcessBusManagerAction) : ChannelsManagerAction {
+class ChannelsManager(context: Context,
+                      var crossProcessBusManagerAction: CrossProcessBusManagerAction) : ChannelsManagerAction, CoroutineScope {
     private var mCrossProcessBusManagerAction = crossProcessBusManagerAction
     var uuid: UUID = UUID.randomUUID()
         private set
+    private val job: Job by lazy { Job() }
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + job
 
     //存储着所有消息通道，不同消息通道可能会连接不同的服务端<channelName,crossChannel>
     private val channelList: MutableMap<String, CrossChannel<*>> by lazy { mutableMapOf() }
@@ -28,18 +36,18 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
 
     var mProcessManager: IMessageManager.Stub? = null
     var mProcessCallback: IClientListener.Stub? = null
+
     //连接信息，连接到哪个服务
-    var pkgName: String?=null
-    var clsName: String?=null
+    var pkgName: String? = null
+    var clsName: String? = null
     var isBound: Boolean = false
     lateinit var currentProcessName:String
 
     /**
      * 从服务端拉取一次消息,
      */
-    private fun  getRemoteDataOnces(channelInfo: ChannelConnectInfo): EventMessage? {
-       val message:EventMessage?= mProcessManager?.getMessageOnces(channelInfo)
-        return message
+    private fun getRemoteDataOnces(channelInfo: ChannelConnectInfo) {
+        mProcessManager?.getMessageOnces(channelInfo)
     }
 
     /**
@@ -78,17 +86,15 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
 
     fun <T : Any> getChannel(channelInfo: ChannelConnectInfo, clazz: Class<T>): CrossChannel<T>? {
         synchronized(channelList) {
-            var channel: CrossChannel<T>? = null
-            if (!channelList.containsKey(channelInfo.channelName)) {
-                channel = CrossChannel(this@ChannelsManager, channelInfo, clazz)
+            var channel: CrossChannel<*>? = channelList[channelInfo.channelName]
+            if (channel == null) {
                 // 2021/6/16 与service建立连接并获取消息,并验证service端对应本地的channel是否存在
                 var connect: ConnectResult? = mProcessManager?.requestConnect(channelInfo)
                 if (connect == null || connect.code != ResultCode.success) {
                     return null
-                } else {//建立连接后拉取一次消息推送给本地channel
-                    (channel as CrossChannel<T>).notifyObserver2(getRemoteDataOnces(channelInfo))
                 }
-
+                channel = CrossChannel(this@ChannelsManager, channelInfo, clazz)
+                channelList[channelInfo.channelName] = channel
             }
             return channel as CrossChannel<T>
         }
@@ -102,7 +108,7 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
                     override fun notifyDataChanged(message: EventMessage?) {
                         //("根据参数，把message解析成特定类型，发送给客户端channel")
                         if (message != null) {
-                            channelList[message.channel]?.notifyObserver2(message)
+                            channelList[message.channel]?.notifyObserver(message)
                         }
                     }
 
@@ -155,7 +161,7 @@ class ChannelsManager(context: Context, var crossProcessBusManagerAction: CrossP
             mContext = null
             mProcessCallback = null
             mProcessManager = null
-
+            job.cancel()
         }
 
     }
