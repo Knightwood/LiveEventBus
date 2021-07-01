@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.kiylx.bus">
+
     <permission android:name="${applicationId}.bus_ipc.PERMISSION"
-        android:label="bus process service permission"
+        android:label="cross process service permission"
         android:protectionLevel="signature" />
-    <uses-permission android:name="${BUS_MAIN_APPLICATION_ID}.bus_ipc.PERMISSION" />
 
     <application>
         <service
             android:name=".eventbus.ipc.binder.services.MessageService"
             android:enabled="true"
-            android:exported="${BUS_SUPPORT_MULTI_APP}"
-            android:permission="${BUS_MAIN_APPLICATION_ID}.bus_ipc.PERMISSION"
+            android:exported="${EXPORTED_OTHER_APP}"
+            android:permission="${applicationId}.bus_ipc.PERMISSION"
             android:process="${BUS_MAIN_APPLICATION_ID}.bus_ipc.ProcessManagerService" >
-        <meta-data android:name="BUS_SUPPORT_MULTI_APP" android:value="${BUS_SUPPORT_MULTI_APP}"/>
-        <meta-data android:name="BUS_MAIN_APPLICATION_ID" android:value="${BUS_MAIN_APPLICATION_ID}"/>
         </service>
     </application>
 
 </manifest>
+    <!--<meta-data android:name="IS_SUPPORT_MULTI_APP" android:value="${EXPORTED_OTHER_APP}"/>
+        <meta-data android:name="HOST_APPLICATION_ID" android:value="${BUS_MAIN_APPLICATION_ID}"/>-->

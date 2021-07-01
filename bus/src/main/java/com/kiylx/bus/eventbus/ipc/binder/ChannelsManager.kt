@@ -136,6 +136,7 @@ class ChannelsManager(context: Context,
         //连接到服务端
         val intent = Intent(Intent.ACTION_MAIN)
         intent.component = ComponentName(pkgName!!, clsName!!)
+        //intent.putExtra(Const.serviceIntentExtra_permission,)
         isBound = context.bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE)
         if (!isBound) {
             Logs.e(CrossChannel.tag, "Can not find the host app under :${pkgName}")
@@ -148,7 +149,7 @@ class ChannelsManager(context: Context,
 
     private fun unbindService() {
         if (isBound) {
-            mContext?.unbindService(mServiceConnection)
+
             if (mProcessManager != null && mProcessManager!!.asBinder().isBinderAlive()) {
                 try {
                     // 取消注册
@@ -157,6 +158,7 @@ class ChannelsManager(context: Context,
                     e.printStackTrace()
                 }
             }
+            mContext?.unbindService(mServiceConnection)
             isBound = false
             mContext = null
             mProcessCallback = null

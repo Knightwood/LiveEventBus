@@ -2,12 +2,14 @@ package com.kiylx.bus.eventbus.ipc.binder.services
 
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.IBinder
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.kiylx.bus.eventbus.IClientListener
 import com.kiylx.bus.eventbus.IMessageManager
+import com.kiylx.bus.eventbus.ipc.binder.Const
 import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
 import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
 import com.kiylx.bus.eventbus.ipc.binder.model.ConnectResult
@@ -15,16 +17,14 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 
 /**
- * 进程创建时调用，一般在 Application 的 onCreate 中调用
- * 单应用多进程场景请使用{BUS_SUPPORT_MULTI_APP : false}
+ * 单应用多进程场景请使用{EXPORTED_OTHER_APP : false}
  * <p>
- * 多应用且多进程场景请使用{BUS_SUPPORT_MULTI_APP : true}
+ * 多应用且多进程场景请使用{EXPORTED_OTHER_APP : true}
  * 同时配置应用包名 {BUS_MAIN_APPLICATION_ID :共享服务且常驻的包名 }
- * 主应用必须安装，否则不能正常运行
  * <p>
  * eg:<pre><code>{
  *      manifestPlaceholders = [
- *         BUS_SUPPORT_MULTI_APP  : true,
+ *         EXPORTED_OTHER_APP  : true,
  *         BUS_MAIN_APPLICATION_ID: "com.example.bus"
  *     ]
  * }</code></pre>
@@ -32,6 +32,8 @@ import kotlin.coroutines.CoroutineContext
 
 class MessageService() : Service(), CoroutineScope, LifecycleOwner {
     private var mCommunicationManager: CommunicationManager = CommunicationManager.instance
+    private var mAppCommunicationManager: AppCommunicationManager = AppCommunicationManager.instance
+
     private val lifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this)
     private val job: Job by lazy { Job() }
     override val coroutineContext: CoroutineContext
@@ -81,6 +83,17 @@ class MessageService() : Service(), CoroutineScope, LifecycleOwner {
             mCommunicationManager.sendMesToClient(connectInfo)
         }
 
+        override fun registerAppListener(listener: IClientListener?) {
+            if (listener != null) {
+                mAppCommunicationManager.registerAppListener(listener)
+            }
+        }
+
+        override fun unregisterAppListener(listener: IClientListener?) {
+            if (listener != null)
+                mAppCommunicationManager.unregisterAppListener(listener)
+        }
+
     }
 
     override fun onCreate() {
@@ -94,9 +107,16 @@ class MessageService() : Service(), CoroutineScope, LifecycleOwner {
         job.cancel()
     }
 
-    override fun onBind(intent: Intent): IBinder {
+    override fun onBind(intent: Intent): IBinder? {
         lifecycleRegistry.markState(Lifecycle.State.STARTED)
-        return mBinder
+        //权限验证
+        val applicationId: String? = intent.getStringExtra(Const.serviceIntentExtra_permission)
+        val check: Int = checkCallingOrSelfPermission("${applicationId}.bus_ipc.PERMISSION")
+        return if (check == PackageManager.PERMISSION_DENIED) {
+            null
+        } else {
+            mBinder
+        }
     }
 
     override fun getLifecycle(): Lifecycle {

@@ -1,10 +1,14 @@
 package com.kiylx.liveeventbus
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.kiylx.bus.eventbus.utils.LiveEventBus
 import com.kiylx.bus.eventbus.core.OstensibleObserver
+import com.kiylx.bus.eventbus.ipc.binder.getServiceName
+import com.kiylx.bus.eventbus.ipc.binder.services.MessageService
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 
@@ -14,10 +18,11 @@ class MainActivity : AppCompatActivity(),CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val channel = LiveEventBus.with<String>("one", String::class.java)
+        /*val channel = LiveEventBus.with<String>("one", String::class.java)
         val channel2 = LiveEventBus.with<String>("two", String::class.java)
 
         for (i in 0..9) {
@@ -48,7 +53,9 @@ class MainActivity : AppCompatActivity(),CoroutineScope {
                     Log.d(TAG, "onChanged3: $t")
                 }
             })
-        }
+        }*/
+        //getSystemServiceName(MessageService::class.java)?.let { Log.d(TAG, it) }
+        getServiceName(this)?.let { Log.d(TAG, it) }
 
     }
 

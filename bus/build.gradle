@@ -27,11 +27,6 @@ android {
             // 读取设置的签名文件
             //signingConfig signingConfigs.kestore1
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            manifestPlaceholders = [
-                    APP_NAME               : "IPC-Binder-debug-key1",
-                    BUS_SUPPORT_MULTI_APP  : true,
-                    BUS_MAIN_APPLICATION_ID: "com.kiylx.bus"
-            ]
         }
     }
     compileOptions {

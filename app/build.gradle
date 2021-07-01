@@ -20,6 +20,16 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        debug{
+            minifyEnabled false
+            // 读取设置的签名文件
+            //signingConfig signingConfigs.kestore1
+            manifestPlaceholders = [
+                    APP_NAME               : "IPC-Binder-debug-key1",
+                    EXPORTED_OTHER_APP  : true,
+                    BUS_MAIN_APPLICATION_ID: "com.kiylx.bus"
+            ]
+        }
     }
     compileOptions {
         sourceCompatibility = 1.8
