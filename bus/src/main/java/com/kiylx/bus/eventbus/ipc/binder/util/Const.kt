@@ -1,4 +1,4 @@
-package com.kiylx.bus.eventbus.ipc.binder
+package com.kiylx.bus.eventbus.ipc.binder.util
 
 class Const {
     companion object {

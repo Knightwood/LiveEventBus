@@ -5,10 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import com.kiylx.bus.eventbus.utils.LiveEventBus
-import com.kiylx.bus.eventbus.core.OstensibleObserver
-import com.kiylx.bus.eventbus.ipc.binder.getServiceName
-import com.kiylx.bus.eventbus.ipc.binder.services.MessageService
+import com.kiylx.bus.eventbus.ipc.binder.util.getServiceName
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 

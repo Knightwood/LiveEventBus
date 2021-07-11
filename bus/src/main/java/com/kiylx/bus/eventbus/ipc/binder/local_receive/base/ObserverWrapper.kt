@@ -1,11 +1,11 @@
-package com.kiylx.bus.eventbus.ipc.binder.base
+package com.kiylx.bus.eventbus.ipc.binder.local_receive.base
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.OnLifecycleEvent
 import com.kiylx.bus.eventbus.core.OstensibleObserver
-import com.kiylx.bus.eventbus.ipc.binder.interfaces.ChannelAction
+import com.kiylx.bus.eventbus.ipc.binder.local_receive.interfaces.ChannelAction
 
 class ObserverWrapper<T>(val observer: OstensibleObserver<T>,
                          lifecycleOwner: LifecycleOwner,

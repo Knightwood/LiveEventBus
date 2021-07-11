@@ -1,4 +1,4 @@
-package com.kiylx.bus.eventbus.ipc.binder.interfaces
+package com.kiylx.bus.eventbus.ipc.binder.local_receive.interfaces
 
 import java.util.*
 

@@ -1,13 +1,15 @@
-package com.kiylx.bus.eventbus.ipc.binder
+package com.kiylx.bus.eventbus.ipc.binder.local_receive
 
 import androidx.lifecycle.LifecycleOwner
 import com.kiylx.bus.eventbus.core.OstensibleObserver
 import com.kiylx.bus.eventbus.core.interfaces.Cornerstone2
-import com.kiylx.bus.eventbus.ipc.binder.base.ObserverWrapper
-import com.kiylx.bus.eventbus.ipc.binder.interfaces.ChannelAction
-import com.kiylx.bus.eventbus.ipc.binder.interfaces.ChannelsManagerAction
+import com.kiylx.bus.eventbus.ipc.binder.local_receive.base.ObserverWrapper
+import com.kiylx.bus.eventbus.ipc.binder.local_receive.interfaces.ChannelAction
+import com.kiylx.bus.eventbus.ipc.binder.local_receive.interfaces.ChannelsManagerAction
 import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
 import com.kiylx.bus.eventbus.ipc.binder.model.EventMessage
+import com.kiylx.bus.eventbus.ipc.binder.model.Request
+import com.kiylx.bus.eventbus.ipc.binder.util.currentProcessName
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
@@ -17,9 +19,11 @@ import java.util.*
  * 同一个channel中存储着所有关注同一个远程消息发布者(同一种消息或数据)的观察者。
  * 一个channel监听同一种消息或者说数据
  */
-class CrossChannel<T : Any>(channelsManagerAction: ChannelsManagerAction,
-                            channelInfo: ChannelConnectInfo,
-                            val clazz: Class<T>) : Cornerstone2(), ChannelAction {
+class CrossChannel<T : Any>(
+    channelsManagerAction: ChannelsManagerAction,
+    channelInfo: ChannelConnectInfo,
+    val clazz: Class<T>
+) : Cornerstone2(), ChannelAction {
     val tag = "跨进程Channel"
     private var connectInfo: ChannelConnectInfo = channelInfo //连接信息，连接到哪个服务
     private var observersMap: MutableMap<UUID, ObserverWrapper<*>> = mutableMapOf()//观察同一个消息源的观察者集合
@@ -27,7 +31,7 @@ class CrossChannel<T : Any>(channelsManagerAction: ChannelsManagerAction,
     private val mConfig: Config by lazy { Config() }
 
     private var locateData: T? = null//从service拿到的数据副本
-    private val toRemote: Channel<EventMessage> = Channel(mConfig.remoteLimit)//向服务端发送
+    private val toRemote: Channel<Request> = Channel(mConfig.remoteLimit)//向服务端发送
     private val toLocal: Channel<EventMessage> = Channel(mConfig.localLimit)//从服务端接受
 
     init {
@@ -52,9 +56,16 @@ class CrossChannel<T : Any>(channelsManagerAction: ChannelsManagerAction,
     /**
      * 向服务端发送数据
      */
-    fun sendToRemote(data: T) {
+    fun sendToRemote(data: T, dataTo: String) {
         launch {
-            val mes = EventMessage(connectInfo.channelName, "", covertToJson(data))
+            val mes = Request(
+                currentProcessName,
+                dataTo,
+                connectInfo.channelName,
+                connectInfo.pkgName+connectInfo.clsName,
+                "",
+                covertToJson(data)
+            )
             toRemote.send(mes)
         }
     }
@@ -78,7 +89,10 @@ class CrossChannel<T : Any>(channelsManagerAction: ChannelsManagerAction,
      * @return 在map中能找到ostensibleObserver.uuid对应的ObserverAgent实例，返回null。
      * 在map中找不到ostensibleObserver.uuid对应的ObserverWrapper实例，放入new出来的值，并返回此实例。
      */
-    private fun putIfAbsent(lifecycleOwner: LifecycleOwner, ostensibleObserver: OstensibleObserver<T>): ObserverWrapper<T>? {
+    private fun putIfAbsent(
+        lifecycleOwner: LifecycleOwner,
+        ostensibleObserver: OstensibleObserver<T>
+    ): ObserverWrapper<T>? {
         var v = observersMap[ostensibleObserver.uuid]
         if (v == null) {
             v = ObserverWrapper(ostensibleObserver, lifecycleOwner, this@CrossChannel)

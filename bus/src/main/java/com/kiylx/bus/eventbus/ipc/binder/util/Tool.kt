@@ -1,4 +1,4 @@
-package com.kiylx.bus.eventbus.ipc.binder
+package com.kiylx.bus.eventbus.ipc.binder.util
 
 import android.app.ActivityManager
 import android.content.ComponentName
@@ -16,7 +16,22 @@ fun getServiceName(channelConnectInfo: ChannelConnectInfo): String {
     return channelConnectInfo.pkgName + channelConnectInfo.clsName
 }
 
-val remoteServiceSuffix =".eventbus.ipc.binder.services.MessageService"
+val remoteServiceSuffix = ".eventbus.ipc.binder.services.MessageService"
+
+
+val currentProcessName: String
+    get() {
+        return " "
+    }
+val appServiceName:String
+    get() {
+       return " "
+    }
+val remoteProcessName:String
+get() {
+    return " "
+}
+
 
 @Deprecated("待改进")
 fun getServiceName(context: Context): String? {
@@ -25,13 +40,13 @@ fun getServiceName(context: Context): String? {
         val cn = ComponentName(context, MessageService::class.java)
         val info = context.packageManager.getServiceInfo(cn, PackageManager.GET_META_DATA)
         val supportMultiApp = info.metaData.getBoolean("IS_SUPPORT_MULTI_APP", false)
-        Log.d("ToolKit","supportMultiApp: $supportMultiApp")
+        Log.d("ToolKit", "supportMultiApp: $supportMultiApp")
         if (!supportMultiApp) {
             mPkgName = context.packageName
-            Log.d("ToolKit","不支持supportMultiApp: $mPkgName")
+            Log.d("ToolKit", "不支持supportMultiApp: $mPkgName")
         } else {
             val mainApplicationId = info.metaData.getString("HOST_APPLICATION_ID")
-            Log.d("ToolKit","mainApplicationId: $mainApplicationId")
+            Log.d("ToolKit", "mainApplicationId: $mainApplicationId")
             if (TextUtils.isEmpty(mainApplicationId)) {
                 Logs.e("ToolKit", "Can not find the host app under :${mPkgName}")
                 if (Logs.DEBUG >= Logs.nowLevel) {
@@ -48,7 +63,6 @@ fun getServiceName(context: Context): String? {
     }
     return mPkgName
 }
-
 
 
 fun getProcessName(cxt: Context): String {

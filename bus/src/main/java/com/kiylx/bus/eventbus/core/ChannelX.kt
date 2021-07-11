@@ -4,6 +4,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.kiylx.bus.eventbus.core.interfaces.Action
 import com.kiylx.bus.eventbus.core.interfaces.Cornerstone
+import com.kiylx.bus.eventbus.core.interfaces.CrossProcessAction
 import com.kiylx.bus.eventbus.utils.Utils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -17,11 +18,17 @@ import java.util.*
  * 描述：推送事件由通道实现.
  * T : 消息类
  */
-class ChannelX<T : Any>(val channelName: String,
-                        val clazz: Class<T>) : Cornerstone(), Action<T> {
+class ChannelX<T : Any>(
+    val channelName: String,
+    val clazz: Class<T>,
+    action: CrossProcessAction? = null
+) : Cornerstone(), Action<T> {
+
+
     private val channelConfigs: ChannelConfigs by lazy { ChannelConfigs() }
     private val inBox = LiveDataMod<T>()//存放消息的信箱
     private var mesSender: Channel<T> = Channel<T>(channelConfigs.mSenderCapacity)
+    public var crossProcessAction: CrossProcessAction? = action
 
     init {
         launch(coroutineContext) {
@@ -35,10 +42,13 @@ class ChannelX<T : Any>(val channelName: String,
 
 
     //以下是发送
-
     override fun post(value: T) = postInBox(value, 0L, null)
 
-    fun postJson(json: String) {
+    /**
+     * 发送json类型到信箱
+     * 前提是json能转换为T类型
+     */
+   override fun postJson(json: String) {
         launch(coroutineContext) {
             val data = jsonConvertToObject(json)
             postInBox2(data)
@@ -48,11 +58,12 @@ class ChannelX<T : Any>(val channelName: String,
     override fun postDelay(value: T, delay: Long) = postInBox(value, delay, null)
 
     override fun postDelay(sender: LifecycleOwner, value: T, delay: Long) =
-            postInBox(value, delay, sender)
+        postInBox(value, delay, sender)
 
     //以下是监听
     override fun observe(owner: LifecycleOwner, ostensibleObserver: OstensibleObserver<T>) {
-        observerInternal(owner, ostensibleObserver
+        observerInternal(
+            owner, ostensibleObserver
                 .config()
                 .setSticky(false)
                 .build()
@@ -60,7 +71,8 @@ class ChannelX<T : Any>(val channelName: String,
     }
 
     override fun observeSticky(owner: LifecycleOwner, ostensibleObserver: OstensibleObserver<T>) {
-        observerInternal(owner, ostensibleObserver
+        observerInternal(
+            owner, ostensibleObserver
                 .config()
                 .setSticky(true)
                 .build()
@@ -68,7 +80,8 @@ class ChannelX<T : Any>(val channelName: String,
     }
 
     override fun observeForever(ostensibleObserver: OstensibleObserver<T>) {
-        observerForeverInternal(ostensibleObserver
+        observerForeverInternal(
+            ostensibleObserver
                 .config()
                 .setSticky(false)
                 .build()
@@ -76,7 +89,8 @@ class ChannelX<T : Any>(val channelName: String,
     }
 
     override fun observeStickyForever(ostensibleObserver: OstensibleObserver<T>) {
-        observerForeverInternal(ostensibleObserver
+        observerForeverInternal(
+            ostensibleObserver
                 .config()
                 .setSticky(true)
                 .build()
@@ -121,6 +135,9 @@ class ChannelX<T : Any>(val channelName: String,
         }
     }
 
+    /**
+     * 不能设置延迟发送
+     */
     private suspend fun postInBox2(message: T, owner: LifecycleOwner? = null) {
         //带生命周期的发送消息的时候sender处于非激活状态时，消息取消发送
         if (owner != null) {
@@ -140,8 +157,8 @@ class ChannelX<T : Any>(val channelName: String,
      * 并与lifecycleOwner建立了关系。
      */
     private fun observerInternal(
-            owner: LifecycleOwner,
-            ostensibleObserver: OstensibleObserver<T>
+        owner: LifecycleOwner,
+        ostensibleObserver: OstensibleObserver<T>
     ): ObserverAgent<*>? {
         val existing = putIfAbsent(ostensibleObserver)
         if (existing != null) {
@@ -211,7 +228,11 @@ class ChannelX<T : Any>(val channelName: String,
         MainBusManager.instance.gson.toJson(inBox.value)
     }
 
-    private suspend fun jsonConvertToObject(json: String): T = withContext(Dispatchers.Default) {
+    suspend fun dataConvertToJson(value: T): String = withContext(Dispatchers.Default) {
+        MainBusManager.instance.gson.toJson(value)
+    }
+
+    suspend fun jsonConvertToObject(json: String): T = withContext(Dispatchers.Default) {
         MainBusManager.instance.gson.fromJson(json, clazz)
     }
 
@@ -226,8 +247,8 @@ class ChannelX<T : Any>(val channelName: String,
         var allowRemoteListen = true//通道是否允许被远程监听
         var mSenderCapacity: Int = 20//通道容许的缓冲值
 
-        fun setCapacity(limit:Int): ChannelConfigs {
-            this.mSenderCapacity=limit
+        fun setCapacity(limit: Int): ChannelConfigs {
+            this.mSenderCapacity = limit
             return this
         }
 
@@ -244,6 +265,11 @@ class ChannelX<T : Any>(val channelName: String,
         fun build(): ChannelX<T> {
             return this@ChannelX
         }
+    }
+
+    override fun clear() {
+        super.clear()
+        crossProcessAction = null
     }
 
     companion object {

@@ -1,12 +1,11 @@
-package com.kiylx.bus.eventbus.ipc.binder
+package com.kiylx.bus.eventbus.ipc.binder.local_receive
 
 import android.content.Context
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.google.gson.Gson
-import com.kiylx.bus.eventbus.core.interfaces.BaseBusManager
-import com.kiylx.bus.eventbus.ipc.binder.interfaces.CrossProcessBusManagerAction
+import com.kiylx.bus.eventbus.ipc.binder.local_receive.interfaces.CrossProcessBusManagerAction
 import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
 import java.util.*
 
@@ -17,7 +16,7 @@ import java.util.*
  * 描述：存储消息通道，分发消息通道，全局配置调整.manager
  * CrossProcessBusManager管理着连接到不同service的ChannelsManager
  */
-class CrossProcessBusManager private constructor() : BaseBusManager, LifecycleOwner, CrossProcessBusManagerAction {
+class CrossProcessBusManager private constructor() :  LifecycleOwner, CrossProcessBusManagerAction {
     private val config: Config//配置项
     private val lifecycleRegistry: LifecycleRegistry
     private val channelsManagerMap: MutableMap<String, ChannelsManager> by lazy { mutableMapOf() }//<service全名,channelsManager>

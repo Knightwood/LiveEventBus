@@ -18,6 +18,7 @@ public interface Action<T> {
      * @param value 发送的消息
      */
     void post(T value);
+    void postJson(String json);
 
     /**
      * App内发送消息，跨进程使用

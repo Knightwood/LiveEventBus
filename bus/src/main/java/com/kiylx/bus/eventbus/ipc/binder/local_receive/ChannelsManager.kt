@@ -1,4 +1,4 @@
-package com.kiylx.bus.eventbus.ipc.binder
+package com.kiylx.bus.eventbus.ipc.binder.local_receive
 
 import android.content.ComponentName
 import android.content.Context
@@ -8,9 +8,11 @@ import android.os.IBinder
 import android.os.RemoteException
 import com.kiylx.bus.eventbus.IClientListener
 import com.kiylx.bus.eventbus.IMessageManager
-import com.kiylx.bus.eventbus.ipc.binder.interfaces.ChannelsManagerAction
-import com.kiylx.bus.eventbus.ipc.binder.interfaces.CrossProcessBusManagerAction
+import com.kiylx.bus.eventbus.ipc.binder.util.getProcessName
+import com.kiylx.bus.eventbus.ipc.binder.local_receive.interfaces.ChannelsManagerAction
+import com.kiylx.bus.eventbus.ipc.binder.local_receive.interfaces.CrossProcessBusManagerAction
 import com.kiylx.bus.eventbus.ipc.binder.model.*
+import com.kiylx.bus.eventbus.ipc.binder.util.MutableMap2
 import com.kiylx.bus.eventbus.utils.Logs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +25,7 @@ import kotlin.coroutines.CoroutineContext
  */
 class ChannelsManager(context: Context,
                       var crossProcessBusManagerAction: CrossProcessBusManagerAction) : ChannelsManagerAction, CoroutineScope {
+
     private var mCrossProcessBusManagerAction = crossProcessBusManagerAction
     var uuid: UUID = UUID.randomUUID()
         private set
@@ -31,29 +34,30 @@ class ChannelsManager(context: Context,
         get() = Dispatchers.Main + job
 
     //存储着所有消息通道，不同消息通道可能会连接不同的服务端<channelName,crossChannel>
-    private val channelList: MutableMap<String, CrossChannel<*>> by lazy { mutableMapOf() }
+    //<hostProcessName,channelName,CrossChannel<*>>
+    private val channelList :MutableMap2<String,String,CrossChannel<*>> by lazy { MutableMap2() }
     private var mContext: Context? = context
 
     var mProcessManager: IMessageManager.Stub? = null
     var mProcessCallback: IClientListener.Stub? = null
 
     //连接信息，连接到哪个服务
-    var pkgName: String? = null
-    var clsName: String? = null
+    var pkgName:String=" "
+    var clsName:String=" "
     var isBound: Boolean = false
     lateinit var currentProcessName:String
 
     /**
      * 从服务端拉取一次消息,
      */
-    private fun getRemoteDataOnces(channelInfo: ChannelConnectInfo) {
-        mProcessManager?.getMessageOnces(channelInfo)
+    private fun getRemoteDataOnces(hostName:String,channelName:String) {
+        mProcessManager?.getMessageOnces(ChannelConnectInfo(pkgName,clsName,currentProcessName,hostName,channelName))
     }
 
     /**
      *  向服务端发送数据或消息
      */
-    override fun send(data: EventMessage) {
+    override fun send(data: Request) {
         mProcessManager?.sendMessage(data)
     }
 
@@ -64,7 +68,7 @@ class ChannelsManager(context: Context,
      */
     override fun destroyChannel(connectInfo: ChannelConnectInfo) {
         synchronized(channelList) {
-            channelList.remove(connectInfo.channelName)// 删除本地channel
+            channelList.remove(connectInfo.hostFrom,connectInfo.channelName)// 删除本地channel
             mProcessManager?.deleteObserver(connectInfo)//请求服务端删除服务端对特定channel监听的服务端observer
             if (channelList.isEmpty()) {
                 mCrossProcessBusManagerAction.deleteChannelsManager(pkgName+clsName)
@@ -86,15 +90,15 @@ class ChannelsManager(context: Context,
 
     fun <T : Any> getChannel(channelInfo: ChannelConnectInfo, clazz: Class<T>): CrossChannel<T>? {
         synchronized(channelList) {
-            var channel: CrossChannel<*>? = channelList[channelInfo.channelName]
+            var channel: CrossChannel<*>? = channelList.get(channelInfo.clientFrom,channelInfo.channelName)
             if (channel == null) {
                 // 2021/6/16 与service建立连接并获取消息,并验证service端对应本地的channel是否存在
-                var connect: ConnectResult? = mProcessManager?.requestConnect(channelInfo)
+                val connect: ConnectResult? = mProcessManager?.requestConnect(channelInfo)
                 if (connect == null || connect.code != ResultCode.success) {
                     return null
                 }
                 channel = CrossChannel(this@ChannelsManager, channelInfo, clazz)
-                channelList[channelInfo.channelName] = channel
+                channelList.add(channelInfo.hostFrom,channelInfo.channelName,channel)
             }
             return channel as CrossChannel<T>
         }
@@ -108,12 +112,16 @@ class ChannelsManager(context: Context,
                     override fun notifyDataChanged(message: EventMessage?) {
                         //("根据参数，把message解析成特定类型，发送给客户端channel")
                         if (message != null) {
-                            channelList[message.channel]?.notifyObserver(message)
+                            channelList.get(message.dataFrom,message.channelName)?.notifyObserver(message)
                         }
                     }
 
                     override fun getLocateFrom(): String {
                        return currentProcessName
+                    }
+
+                    override fun getLinkToProcess(): MutableList<String> {
+                        return channelList.getTArray().toMutableList()
                     }
 
                 }
@@ -135,13 +143,13 @@ class ChannelsManager(context: Context,
     private fun bindService(context: Context) {
         //连接到服务端
         val intent = Intent(Intent.ACTION_MAIN)
-        intent.component = ComponentName(pkgName!!, clsName!!)
+        intent.component = ComponentName(pkgName, clsName)
         //intent.putExtra(Const.serviceIntentExtra_permission,)
         isBound = context.bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE)
         if (!isBound) {
             Logs.e(CrossChannel.tag, "Can not find the host app under :${pkgName}")
             if (Logs.DEBUG >= Logs.nowLevel) {
-                throw RuntimeException("Can not find the host app under :" + pkgName)
+                throw RuntimeException("Can not find the host app under :$pkgName")
             }
         }
     }

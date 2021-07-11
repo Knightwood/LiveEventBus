@@ -5,6 +5,7 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 /**
+ * 进程间缓存事件封装类，事件定义
  *@param dataFrom 来自哪个client进程
  *@param dataTo 去往哪个host进程
  *@param channelName 要监听的channel名称
@@ -12,15 +13,16 @@ import kotlinx.parcelize.Parcelize
  *@param dataType
  */
 @Parcelize
-data class Request(val dataFrom: String="",
-                   val dataTo: String="",
-                   val channelName: String="",
-                   val connectService: String="",
-                   val dataType: String="",
-                   val json: String=""
-): Parcelable {
+data class EventMessage(
+    val dataFrom: String="",
+    val dataTo: String="",
+    val channelName: String="",
+    val connectService: String="",
+    val dataType: String="",
+    val json: String =""
+) : Parcelable {
     fun readFromParcel(_reply: Parcel) {
-        dataFrom=_reply.readString()
+
     }
 }
 

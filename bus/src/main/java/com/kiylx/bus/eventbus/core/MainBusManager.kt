@@ -4,7 +4,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.google.gson.Gson
-import com.kiylx.bus.eventbus.core.interfaces.BaseBusManager
 import java.util.*
 
 /**
@@ -13,19 +12,21 @@ import java.util.*
  * packageName：com.crystal.aplayer.module_base.tools.databus
  * 描述：存储消息通道，分发消息通道，全局配置调整.manager
  */
-class MainBusManager private constructor() : BaseBusManager, LifecycleOwner {
-    private val mChannels //存放消息通道. Map<channelName,ChannelX<Object>>
+class MainBusManager private constructor() : LifecycleOwner {
+    val mChannels //存放消息通道. Map<channelName,ChannelX<Object>>
             : MutableMap<String, ChannelX<*>>
     private val config //配置项
             : Config
     private var lifecycleObserverAlwaysActive: Boolean
     private var autoClear: Boolean
-    private val lifecycleRegistry: LifecycleRegistry
+    val lifecycleRegistry: LifecycleRegistry
     override fun getLifecycle(): Lifecycle {
         return lifecycleRegistry
     }
 
     val gson: Gson by lazy { Gson() }
+
+    var extention:Any?=null //用此实力扩展此类功能
 
     /**
      * @param <T>    消息通道的泛型类
@@ -46,6 +47,10 @@ class MainBusManager private constructor() : BaseBusManager, LifecycleOwner {
         return mChannels[target] as ChannelX<T>
     }
 
+    /**
+     * 远程调用时使用。
+     *
+     */
     fun getChannel2(target: String, lifecycleOwner: LifecycleOwner? = null): ChannelX<Any>? {
         val ch = mChannels[target]
         if (ch != null) {
@@ -86,6 +91,7 @@ class MainBusManager private constructor() : BaseBusManager, LifecycleOwner {
      */
     fun destroy() {
         lifecycleRegistry.markState(Lifecycle.State.DESTROYED)
+        extention=null
     }
 
     fun config(): Config {

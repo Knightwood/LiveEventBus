@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.lifecycle.LifecycleOwner
 import com.kiylx.bus.eventbus.core.MainBusManager
 import com.kiylx.bus.eventbus.core.ChannelX
-import com.kiylx.bus.eventbus.ipc.binder.CrossProcessBusManager
-import com.kiylx.bus.eventbus.ipc.binder.CrossChannel
+import com.kiylx.bus.eventbus.ipc.binder.local_receive.CrossProcessBusManager
+import com.kiylx.bus.eventbus.ipc.binder.local_receive.CrossChannel
 import com.kiylx.bus.eventbus.ipc.binder.model.ChannelConnectInfo
 
 /**
